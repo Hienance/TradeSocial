@@ -6,6 +6,8 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+import { Key } from "react";
+
 /**
  * Supported timezones in IANA format.
  *
@@ -163,6 +165,9 @@ export interface Media {
  * via the `definition` "categories".
  */
 export interface Category {
+  color: string;
+  slug: Key | null | undefined;
+  subcategories: any;
   id: string;
   name: string;
   updatedAt: string;
