@@ -2,7 +2,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle
 } from "@/components/ui/sheet";
-
 import { useState } from "react";
 import { ChevronLeft, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -44,7 +43,7 @@ export const CategoriesSidebar = ({
 
     const handleCategoryClick = (category: CategoriesGetManyOutput[1]) => {
         if (category.subcategories && category.subcategories.length > 0) {
-            setParentCategories(category.subcategories as CategoriesGetManyOutput);
+            setParentCategories(category.subcategories as unknown as CategoriesGetManyOutput);
             setSelectedCategory(category);
         } else { //leaf category (no sub)
             if (parentCategories && selectedCategory) {
