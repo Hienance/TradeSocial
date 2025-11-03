@@ -2,6 +2,7 @@
   "name": "trade-social",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,7 +10,8 @@
     "lint": "eslint",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
-    "db:fresh": "payload migrate:fresh" 
+    "db:fresh": "payload migrate:fresh", 
+    "db:seed": "bun run src/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
