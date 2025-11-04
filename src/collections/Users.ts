@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { text } from 'stream/consumers'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -7,7 +8,11 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   fields: [
-    // Email added by default
-    // Add more fields as needed
+    {
+      name: "username",
+      required: true,
+      unique: true,
+      type: "text",
+    },
   ],
 }
