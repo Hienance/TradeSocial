@@ -10,10 +10,10 @@ import { NavbarSidebar } from "./navbar-sidebar";
 import { useState } from "react";
 import { MenuIcon } from "lucide-react";
 
-const poppins = Poppins({
-    subsets: ["latin"],
-    weight: ["700"],
-});
+    const poppins = Poppins({
+        subsets: ["latin"],
+        weight: ["700"],
+    });
 
 interface NavbarItemProps {
     href: string;
@@ -78,12 +78,12 @@ export const Navbar = () => {
 
             <div className="hidden lg:flex">
                 <Button variant="secondary" className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-white hover:bg-pink-400 transition-color">
-                    <Link href="/sign-in">
+                    <Link prefetch href="/sign-in">
                         Login
                     </Link>
                 </Button>
                 <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
-                    <Link href="/sign-up">
+                    <Link prefetch href="/sign-up">
                         Sign up!
                     </Link>
                 </Button>
