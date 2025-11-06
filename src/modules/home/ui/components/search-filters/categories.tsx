@@ -63,6 +63,7 @@ export const Categories = ({data}: Props) => {
             <CategoriesSidebar open={isSidebarOpen} onOpenChange={setIsSidebarOpen}/>
 
 
+
             {/* hidden div to measure all items */}
             <div 
                 ref={measureRef}
@@ -86,6 +87,9 @@ export const Categories = ({data}: Props) => {
                 onMouseEnter={() => setIsAnyHovered(true)}
                 onMouseLeave={() => setIsAnyHovered(false)}
             >
+
+            {/*TODO: ADD A HARDCODED ALL BUTTON*/}
+
                 {data.slice(0,visibleCount).map((category) => (
                 <div key={category.id}>
                     <CategoryDropdown 
