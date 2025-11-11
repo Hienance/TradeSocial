@@ -1,8 +1,9 @@
-import z from "zod";
+import z, { nullable } from "zod";
 
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
-import { Where } from "payload";
+import { Sort, Where } from "payload";
 import { Category } from "@/payload-types";
+import { sortValues } from "../search-params";
 
 
 export const productsRouter = createTRPCRouter({
@@ -12,11 +13,26 @@ export const productsRouter = createTRPCRouter({
                 category: z.string().nullable().optional(),
                 minPrice: z.string().nullable().optional(),
                 maxPrice: z.string().nullable().optional(),
+                tags: z.array(z.string()).nullable().optional(),
+                sort: z.enum(sortValues).nullable().optional()
             }),
         )
         .query(async({ctx, input}) => {
 
             const where: Where = {};
+            let sort: Sort = "-createdAt";
+
+            if (input.sort === "curated") {
+                sort = "name";
+            }
+
+            if (input.sort === "trending") {
+                sort = "-createdAt";
+            }
+
+            if (input.sort === "hot_and_new") {
+                sort = "+createdAt";
+            }
 
             if (input.minPrice && input.maxPrice) {
                 where.price = {
@@ -69,10 +85,17 @@ export const productsRouter = createTRPCRouter({
                 }
             }
 
+    if (input.tags && input.tags.length > 0) {
+        where["tags.name"] = {
+            in: input.tags,
+        };
+    }
+
     const data = await ctx.db.find({
         collection: "products",
         depth: 1, //populate category and images
         where,
+        sort
     });
 
         return data;
