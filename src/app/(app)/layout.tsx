@@ -5,7 +5,6 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
 
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
-import { type ReactNode } from 'react'
 
 
 const dmSans = DM_Sans({
