@@ -5,6 +5,8 @@ import { Sort, Where } from "payload";
 import { Category, Media, Tenant } from "@/payload-types";
 import { sortValues } from "../search-params";
 import { DEFAULT_LIMIT } from "@/constant";
+import { headers as getHeaders } from "next/headers";
+import { tr } from "date-fns/locale";
 
 
 export const productsRouter = createTRPCRouter({
@@ -15,14 +17,43 @@ export const productsRouter = createTRPCRouter({
             })
         )
         .query(async  ({ctx, input}) => {
+            const headers = await getHeaders();
+            const session = await ctx.db.auth({headers});
+
             const product = await ctx.db.findByID({
                 collection: "products",
                 id: input.id,
                 depth: 2,
             });
 
+            let isPurchased = false;
+            if (session.user) {
+                const ordersData = await ctx.db.find ({
+                    collection: "orders",
+                    pagination: false,
+                    limit: 1,
+                    where: {
+                        and: [
+                            {
+                                product: {
+                                    equals: input.id,
+                                },
+                            },
+                            {
+                                user: {
+                                    equals: session.user.id,
+                                },
+                            },
+                        ],
+                    },
+                });
+
+                isPurchased = ordersData.totalDocs > 0
+            }
+
             return {
                 ...product,
+                isPurchased,
                 image: product.image as Media | null,
                 cover: product.cover as Media | null,
                 tenant: product.tenant as Tenant & {image: Media | null},

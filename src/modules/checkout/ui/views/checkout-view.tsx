@@ -91,7 +91,7 @@ export const CheckoutView = ({tenantSlug} : CheckoutViewProps) => {
                                 isLast = {index ===data.docs.length - 1}
                                 imageUrl= {product.image?.url}
                                 name= {product.name}
-                                productUrl={`${generateTenantURL(product.tenant.slug)}/product/${product.id}`}
+                                productUrl={`${generateTenantURL(product.tenant.slug)}/products/${product.id}`}
                                 tenantUrl={generateTenantURL(product.tenant.slug)}
                                 tenantName={product.tenant.name}
                                 price={product.price}
