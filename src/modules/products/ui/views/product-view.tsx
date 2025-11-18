@@ -115,17 +115,22 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                     <Button 
                                         className="size-12"
                                         variant="elevated"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(window.location.href);
-                                            toast.success("URL copied to clipboard")
+                                        onClick={async () => {
+                                            try {
+                                                await navigator.clipboard.writeText(window.location.href);
+                                                setIsCopied(true);
+                                                toast.success("URL copied to clipboard");
 
-                                            setTimeout(() =>{
-                                                setIsCopied(false);
-                                            }, 1000); 
+                                                setTimeout(() => {
+                                                    setIsCopied(false);
+                                                }, 1000);
+                                            } catch (err) {
+                                                toast.error("Failed to copy URL");
+                                            }
                                         }}
                                         disabled={isCopied}
                                     >
-                                        {isCopied ?  <CheckIcon/> :<LinkIcon/>}
+                                        {isCopied ? <CheckIcon/> : <LinkIcon/>}
                                     </Button>
                                 </div>
                                 <p className="text-center font-medium">
@@ -160,4 +165,3 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
         </div>
     )
 }
- 

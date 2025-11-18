@@ -62,7 +62,7 @@ export const ProductCard = ({
                 {reviewCount > 0 && (
                     <div className="flex items-center gap-1">
                         <StarIcon className="size-3.5 fill-black"/>
-                        <p  className="text-sm font-medium">{reviewRating} {reviewCount}</p>
+                        <p  className="text-sm font-medium">{reviewRating} ({reviewCount})</p>
                     </div>
                 )}
             </div>
