@@ -1,7 +1,6 @@
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { headers as getHeaders} from "next/headers";
-import z, { prefault } from "zod";
 import { loginSchema, registerSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 
@@ -98,5 +97,15 @@ export const authRouter = createTRPCRouter({
             });
 
             return data;
+        }),
+    
+    logout: baseProcedure
+        .mutation(async ({ ctx }) => {
+            await generateAuthCookie({
+                prefix: ctx.db.config.cookiePrefix,
+                value: "", // clear cookie value
+            });
+
+            return true;
         }),
 });

@@ -14,10 +14,9 @@ const Layout = async ({children}: Props) => {
     void queryClient.prefetchQuery(
         trpc.categories.getMany.queryOptions(),
     );
- 
-
 
     return(
+    // Move background up to top-level so tenant pages and other content use the same bg
     <div className="flex flex-col min-h-screen">
         <Navbar />
         <HydrationBoundary  state={dehydrate(queryClient)}>

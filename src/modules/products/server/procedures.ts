@@ -63,7 +63,7 @@ export const productsRouter = createTRPCRouter({
                 },
             });
 
-            const reviewRating = reviews.docs.length > 0 ? reviews.docs.reduce((acc, review) => acc + review.rating, 0) / reviews.totalDocs : 0;
+            const reviewRating = reviews.docs.length > 0 ? Math.round((reviews.docs.reduce((acc, review) => acc + review.rating, 0) / reviews.totalDocs)*100)/100 : 0;
 
             const ratingDistribution: Record<number,number> = {
                 5:0,
@@ -224,7 +224,7 @@ export const productsRouter = createTRPCRouter({
             return {
                 ...doc,
                 reviewCount: reviewsData.totalDocs,
-                reviewRating: reviewsData.docs.length === 0 ? 0 : reviewsData.docs.reduce((acc, review) => acc + review.rating, 0) / reviewsData.totalDocs
+                reviewRating: reviewsData.docs.length === 0 ? 0 : Math.round((reviewsData.docs.reduce((acc, review) => acc + review.rating, 0) / reviewsData.totalDocs)*100)/100,
             }
         })
     )
