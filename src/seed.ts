@@ -1,148 +1,239 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { collectMeta } from "next/dist/build/utils";
+import { stripe } from "./lib/stripe";
 
 const categories = [
   {
-    name: "All",
-    slug: "all",
-  },
-  {
-    name: "Business & Money",
-    color: "#FFB347",
-    slug: "business-money",
-    subcategories: [
-      { name: "Accounting", slug: "accounting" },
-      {
-        name: "Entrepreneurship",
-        slug: "entrepreneurship",
-      },
-      { name: "Gigs & Side Projects", slug: "gigs-side-projects" },
-      { name: "Investing", slug: "investing" },
-      { name: "Management & Leadership", slug: "management-leadership" },
-      {
-        name: "Marketing & Sales",
-        slug: "marketing-sales",
-      },
-      { name: "Networking, Careers & Jobs", slug: "networking-careers-jobs" },
-      { name: "Personal Finance", slug: "personal-finance" },
-      { name: "Real Estate", slug: "real-estate" },
-    ],
-  },
-  {
-    name: "Software Development",
+    name: "Electronics",
     color: "#7EC8E3",
-    slug: "software-development",
+    slug: "electronics",
     subcategories: [
-      { name: "Web Development", slug: "web-development" },
-      { name: "Mobile Development", slug: "mobile-development" },
-      { name: "Game Development", slug: "game-development" },
-      { name: "Programming Languages", slug: "programming-languages" },
-      { name: "DevOps", slug: "devops" },
+      { name: "Smartphones", slug: "smartphones" },
+      { name: "Laptops", slug: "laptops" },
+      { name: "Tablets", slug: "tablets" },
+      { name: "Cameras", slug: "cameras" },
+      { name: "TVs & Home Theater", slug: "tvs-home-theater" },
+      { name: "Audio & Headphones", slug: "audio-headphones" },
+      { name: "Wearables", slug: "wearables" },
+      { name: "Accessories", slug: "electronics-accessories" },
     ],
   },
   {
-    name: "Writing & Publishing",
+    name: "Home & Kitchen",
+    color: "#FFB347",
+    slug: "home-kitchen",
+    subcategories: [
+      { name: "Furniture", slug: "furniture" },
+      { name: "Kitchen Appliances", slug: "kitchen-appliances" },
+      { name: "Cookware & Utensils", slug: "cookware-utensils" },
+      { name: "Bedding & Bath", slug: "bedding-bath" },
+      { name: "Décor", slug: "decor" },
+      { name: "Storage & Organization", slug: "storage-organization" },
+    ],
+  },
+  {
+    name: "Fashion",
     color: "#D8B5FF",
-    slug: "writing-publishing",
+    slug: "fashion",
     subcategories: [
-      { name: "Fiction", slug: "fiction" },
-      { name: "Non-Fiction", slug: "non-fiction" },
-      { name: "Blogging", slug: "blogging" },
-      { name: "Copywriting", slug: "copywriting" },
-      { name: "Self-Publishing", slug: "self-publishing" },
+      { name: "Men's Clothing", slug: "mens-clothing" },
+      { name: "Women's Clothing", slug: "womens-clothing" },
+      { name: "Kids' Clothing", slug: "kids-clothing" },
+      { name: "Shoes", slug: "shoes" },
+      { name: "Accessories", slug: "fashion-accessories" },
     ],
   },
   {
-    name: "Other",
-    slug: "other",
-  },
-  {
-    name: "Education",
-    color: "#FFE066",
-    slug: "education",
-    subcategories: [
-      { name: "Online Courses", slug: "online-courses" },
-      { name: "Tutoring", slug: "tutoring" },
-      { name: "Test Preparation", slug: "test-preparation" },
-      { name: "Language Learning", slug: "language-learning" },
-    ],
-  },
-  {
-    name: "Self Improvement",
-    color: "#96E6B3",
-    slug: "self-improvement",
-    subcategories: [
-      { name: "Productivity", slug: "productivity" },
-      { name: "Personal Development", slug: "personal-development" },
-      { name: "Mindfulness", slug: "mindfulness" },
-      { name: "Career Growth", slug: "career-growth" },
-    ],
-  },
-  {
-    name: "Fitness & Health",
-    color: "#FF9AA2",
-    slug: "fitness-health",
-    subcategories: [
-      { name: "Workout Plans", slug: "workout-plans" },
-      { name: "Nutrition", slug: "nutrition" },
-      { name: "Mental Health", slug: "mental-health" },
-      { name: "Yoga", slug: "yoga" },
-    ],
-  },
-  {
-    name: "Design",
-    color: "#B5B9FF",
-    slug: "design",
-    subcategories: [
-      { name: "UI/UX", slug: "ui-ux" },
-      { name: "Graphic Design", slug: "graphic-design" },
-      { name: "3D Modeling", slug: "3d-modeling" },
-      { name: "Typography", slug: "typography" },
-    ],
-  },
-  {
-    name: "Drawing & Painting",
+    name: "Beauty & Personal Care",
     color: "#FFCAB0",
-    slug: "drawing-painting",
+    slug: "beauty-personal-care",
     subcategories: [
-      { name: "Watercolor", slug: "watercolor" },
-      { name: "Acrylic", slug: "acrylic" },
-      { name: "Oil", slug: "oil" },
-      { name: "Pastel", slug: "pastel" },
-      { name: "Charcoal", slug: "charcoal" },
+      { name: "Skincare", slug: "skincare" },
+      { name: "Makeup", slug: "makeup" },
+      { name: "Hair Care", slug: "hair-care" },
+      { name: "Fragrance", slug: "fragrance" },
+      { name: "Personal Care Appliances", slug: "personal-care-appliances" },
     ],
   },
   {
-    name: "Music",
+    name: "Sports & Outdoors",
+    color: "#96E6B3",
+    slug: "sports-outdoors",
+    subcategories: [
+      { name: "Fitness Equipment", slug: "fitness-equipment" },
+      { name: "Camping & Hiking", slug: "camping-hiking" },
+      { name: "Cycling", slug: "cycling" },
+      { name: "Team Sports", slug: "team-sports" },
+      { name: "Outdoor Gear", slug: "outdoor-gear" },
+    ],
+  },
+  {
+    name: "Toys & Games",
+    color: "#FFE066",
+    slug: "toys-games",
+    subcategories: [
+      { name: "Action Figures & Collectibles", slug: "action-figures" },
+      { name: "Board Games & Puzzles", slug: "board-games-puzzles" },
+      { name: "Educational Toys", slug: "educational-toys" },
+      { name: "Outdoor Play", slug: "outdoor-play" },
+    ],
+  },
+  {
+    name: "Automotive",
+    slug: "automotive",
+    subcategories: [
+      { name: "Car Accessories", slug: "car-accessories" },
+      { name: "Replacement Parts", slug: "replacement-parts" },
+      { name: "Tools & Equipment", slug: "auto-tools-equipment" },
+      { name: "Motorcycle Gear", slug: "motorcycle-gear" },
+    ],
+  },
+  {
+    name: "Health & Wellness",
+    color: "#FF9AA2",
+    slug: "health-wellness",
+    subcategories: [
+      { name: "Vitamins & Supplements", slug: "vitamins-supplements" },
+      { name: "Medical Supplies", slug: "medical-supplies" },
+      { name: "Personal Care", slug: "personal-care-items" },
+    ],
+  },
+  {
+    name: "Office & School Supplies",
+    color: "#B5B9FF",
+    slug: "office-school-supplies",
+    subcategories: [
+      { name: "Office Furniture", slug: "office-furniture" },
+      { name: "Stationery", slug: "stationery" },
+      { name: "Printers & Ink", slug: "printers-ink" },
+      { name: "Organizers", slug: "organizers" },
+    ],
+  },
+  {
+    name: "Pet Supplies",
     color: "#FFD700",
-    slug: "music",
+    slug: "pet-supplies",
     subcategories: [
-      { name: "Songwriting", slug: "songwriting" },
-      { name: "Music Production", slug: "music-production" },
-      { name: "Music Theory", slug: "music-theory" },
-      { name: "Music History", slug: "music-history" },
+      { name: "Dog Supplies", slug: "dog-supplies" },
+      { name: "Cat Supplies", slug: "cat-supplies" },
+      { name: "Pet Food & Treats", slug: "pet-food-treats" },
+      { name: "Pet Accessories", slug: "pet-accessories" },
     ],
   },
   {
-    name: "Photography",
-    color: "#FF6B6B",
-    slug: "photography",
+    name: "Garden & Outdoor",
+    color: "#96E6B3",
+    slug: "garden-outdoor",
     subcategories: [
-      { name: "Portrait", slug: "portrait" },
-      { name: "Landscape", slug: "landscape" },
-      { name: "Street Photography", slug: "street-photography" },
-      { name: "Nature", slug: "nature" },
-      { name: "Macro", slug: "macro" },
+      { name: "Garden Tools", slug: "garden-tools" },
+      { name: "Outdoor Furniture", slug: "outdoor-furniture" },
+      { name: "Grills & Outdoor Cooking", slug: "grills-outdoor-cooking" },
+      { name: "Plants & Seeds", slug: "plants-seeds" },
     ],
   },
-]
-
-
+  {
+    name: "Baby & Child",
+    color: "#FFCAB0",
+    slug: "baby-child",
+    subcategories: [
+      { name: "Strollers & Car Seats", slug: "strollers-car-seats" },
+      { name: "Feeding & Nursing", slug: "feeding-nursing" },
+      { name: "Diapering", slug: "diapering" },
+      { name: "Nursery Furniture", slug: "nursery-furniture" },
+    ],
+  },
+  {
+    name: "Tools & Home Improvement",
+    color: "#B5B9FF",
+    slug: "tools-home-improvement",
+    subcategories: [
+      { name: "Power Tools", slug: "power-tools" },
+      { name: "Hand Tools", slug: "hand-tools" },
+      { name: "Hardware", slug: "hardware" },
+      { name: "Paint & Supplies", slug: "paint-supplies" },
+    ],
+  },
+  {
+    name: "Music & Instruments",
+    color: "#FF6B6B",
+    slug: "music-instruments",
+    subcategories: [
+      { name: "Guitars & String", slug: "guitars-string" },
+      { name: "Keyboards & Pianos", slug: "keyboards-pianos" },
+      { name: "Drums & Percussion", slug: "drums-percussion" },
+      { name: "Recording Equipment", slug: "recording-equipment" },
+    ],
+  },
+  {
+    name: "Books & Media",
+    color: "#FFD700",
+    slug: "books-media",
+    subcategories: [
+      { name: "Fiction", slug: "books-fiction" },
+      { name: "Non-Fiction", slug: "books-non-fiction" },
+      { name: "Magazines", slug: "magazines" },
+      { name: "Movies & TV", slug: "movies-tv" },
+    ],
+  },
+  {
+    name: "Video Games & Consoles",
+    color: "#7EC8E3",
+    slug: "video-games",
+    subcategories: [
+      { name: "Consoles", slug: "consoles" },
+      { name: "Games", slug: "games" },
+      { name: "Accessories", slug: "gaming-accessories" },
+    ],
+  },
+  {
+    name: "Grocery & Gourmet Food",
+    color: "#FFB347",
+    slug: "grocery-gourmet",
+    subcategories: [
+      { name: "Pantry Staples", slug: "pantry-staples" },
+      { name: "Snacks & Beverages", slug: "snacks-beverages" },
+      { name: "Specialty Foods", slug: "specialty-foods" },
+    ],
+  },
+  {
+    name: "Jewelry & Watches",
+    color: "#FFCAB0",
+    slug: "jewelry-watches",
+    subcategories: [
+      { name: "Necklaces & Pendants", slug: "necklaces-pendants" },
+      { name: "Rings", slug: "rings" },
+      { name: "Watches", slug: "watches" },
+      { name: "Earrings", slug: "earrings" },
+    ],
+  },
+  {
+    name: "Handmade & Crafts",
+    color: "#D8B5FF",
+    slug: "handmade-crafts",
+    subcategories: [
+      { name: "Handmade Jewelry", slug: "handmade-jewelry" },
+      { name: "Art & Prints", slug: "art-prints" },
+      { name: "Home Crafts", slug: "home-crafts" },
+    ],
+  },
+];
 
 const seed = async () => {
     const payload = await getPayload ({config});
 
+
+  
+    // Create admin tenant
+    const adminTenant = await payload.create({
+        collection: "tenants",
+        data: {
+            name: "admin",
+            slug: "admin",
+            stripeAccountId:  "acct_1SRqtJ7B7AidhjoX",
+        }
+    });
+
+    // Create a super admin user
     await payload.create({
       collection: "users",
       data: {
