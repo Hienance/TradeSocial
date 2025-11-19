@@ -5,7 +5,6 @@ export const Orders: CollectionConfig = {
     slug: "orders",
     access: {
         read:   ({ req }) => isSuperAdmin(req.user),
-        create: ({ req }) => isSuperAdmin(req.user),
         update: ({ req }) => isSuperAdmin(req.user),
         delete: ({ req }) => isSuperAdmin(req.user),
     },
@@ -38,6 +37,13 @@ export const Orders: CollectionConfig = {
             required: true,
             admin: {
                 description: "Stripe checkout session associated with the order"
+            }
+        },
+        {
+            name: "stripeAccountId",
+            type: "text",
+            admin: {
+                description: "Stripe accoount associated with the order"
             }
         }
     ]

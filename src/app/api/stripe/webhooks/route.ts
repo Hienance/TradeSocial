@@ -33,6 +33,7 @@ export async function POST(req: Request) {
 
     const permittedEvents: string[] = [
         "checkout.session.completed",
+        "account.updated",
     ];
 
     const payload = await getPayload({config});
@@ -63,6 +64,9 @@ export async function POST(req: Request) {
                         {
                             expand: ["line_items.data.price.product"],
                         },
+                        {
+                            stripeAccount: event.account,
+                        },
                     );
 
                     if (!expandedSession.line_items?.data || !expandedSession.line_items.data.length) {
@@ -76,6 +80,7 @@ export async function POST(req: Request) {
                             collection: "orders",
                             data: {
                                 stripeCheckoutSessionId: data.id,
+                                stripeAccountId: event.account,
                                 user: user.id,
                                 product: item.price.product.metadata.id,
                                 name: item.price.product.name,
@@ -83,6 +88,22 @@ export async function POST(req: Request) {
                         });
                     }
                     break;
+                case "account.updated":
+                    data = event.data.object as Stripe.Account;
+
+                    await payload.update({
+                        collection: "tenants",
+                        where: {
+                            stripeAccountId: {
+                                equals: data.id,
+                            },
+                        },
+                        data: {
+                            stripeDetailsSubmitted: data.details_submitted,
+                        },
+                    });
+                    break;
+
                 default: 
                     throw new Error(`Unhandled event: ${event.type}`);
             }

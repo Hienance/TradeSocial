@@ -10,12 +10,12 @@ export const Products: CollectionConfig = {
 
             const tenant = req.user?.tenants?. [0]?.tenant as Tenant
             
-            return true; //temp
-            // return Boolean(tenant?.stripeDetailsSubmitted);
+            return Boolean(tenant?.stripeDetailsSubmitted);
         }
     },
     admin: {
         useAsTitle: "name",
+        description: "You must verify your Stripe account before adding products."
     },
     fields: [
         {
