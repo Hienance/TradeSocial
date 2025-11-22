@@ -117,7 +117,6 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                         className="size-12"
                                         variant="elevated"
                                         onClick={async () => {
-                                            try {
                                                 await navigator.clipboard.writeText(window.location.href);
                                                 setIsCopied(true);
                                                 toast.success("URL copied to clipboard");
@@ -125,9 +124,6 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                                 setTimeout(() => {
                                                     setIsCopied(false);
                                                 }, 1000);
-                                            } catch (err) {
-                                                toast.error("Failed to copy URL");
-                                            }
                                         }}
                                         disabled={isCopied}
                                     >

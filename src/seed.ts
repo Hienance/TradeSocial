@@ -1,6 +1,5 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { stripe } from "./lib/stripe";
 
 const categories = [
   {
@@ -220,18 +219,6 @@ const categories = [
 
 const seed = async () => {
     const payload = await getPayload ({config});
-
-
-  
-    // Create admin tenant
-    const adminTenant = await payload.create({
-        collection: "tenants",
-        data: {
-            name: "admin",
-            slug: "admin",
-            stripeAccountId:  "acct_1SRqtJ7B7AidhjoX",
-        }
-    });
 
     // Create a super admin user
     await payload.create({

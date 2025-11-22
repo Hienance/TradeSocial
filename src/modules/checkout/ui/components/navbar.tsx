@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { generateTenantURL } from "@/lib/utils";
-import { sl } from "date-fns/locale";
 import Link from "next/link";
 
 
