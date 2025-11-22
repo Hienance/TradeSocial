@@ -36,24 +36,10 @@ export const authRouter = createTRPCRouter({
             }
 
             // create stripe account (wrap in try/catch to handle network/proxy errors)
-            let account: any;
-            try {
-                account = await stripe.accounts.create({});
-            } catch (err: any) {
-                console.error("Stripe account creation failed:", err);
-                // In local development allow a fallback so dev flow isn't blocked
-                if (process.env.NODE_ENV === "development") {
-                    account = { id: "test" };
-                } else {
-                    throw new TRPCError({
-                        code: "SERVICE_UNAVAILABLE",
-                        message:
-                            "Failed to connect to Stripe. Check network/firewall/proxy and verify STRIPE_SECRET_KEY is correct.",
-                    });
-                }
-            }
+            
+            const account = await stripe.accounts.create({});
 
-            if (!account?.id) {
+            if (!account) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
                     message: "Failed to create Stripe account",

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage} from "@/components/ui/form"
 import {StarPicker} from "@/components/star-picker";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface Props {
@@ -145,7 +145,7 @@ export const ReviewFormSkeleton = () => {
     return (
         <div className="flex flex-col gap-y-4">
             <p className="font-medium">
-                Liked it? Give it a rating"
+                Liked it? Give it a rating
             </p>
             <StarPicker disabled/>
             <Textarea 

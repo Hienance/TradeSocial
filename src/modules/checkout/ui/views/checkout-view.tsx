@@ -4,7 +4,6 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCart } from "../../hooks/use-cart";
 import { useEffect } from "react";
-import { error } from "console";
 import { toast } from "sonner";
 import { generateTenantURL } from "@/lib/utils";
 import { CheckoutItem } from "../components/checkout-items";

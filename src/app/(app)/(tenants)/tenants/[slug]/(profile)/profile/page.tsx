@@ -1,8 +1,6 @@
-interface Props {
+export const dynamic = "force-dynamic";
 
-}
-
-const Page = async ({} : Props) => {
+const Page = async () => {
     return (
         <div>Profile page</div>
     );

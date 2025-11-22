@@ -1,7 +1,7 @@
-import z, { nullable } from "zod";
+import z from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { Category, Media, Tenant } from "@/payload-types";
+import { Media, Tenant } from "@/payload-types";
 import { DEFAULT_LIMIT } from "@/constant";
 import { TRPCError } from "@trpc/server";
 
