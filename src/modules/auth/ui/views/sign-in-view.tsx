@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { GoogleSignInButton } from "../components/auth-buttons";
+
 
 const poppins = Poppins({
     subsets: ["latin"],
@@ -106,6 +108,8 @@ export  const SignInView = () => {
                     >
                         Log in
                     </Button>
+                    <p className={cn("text-2xl font-semibold text-center", poppins.className)}>Or</p>
+                    <GoogleSignInButton />
                     </form>
                 </Form>
             </div>
