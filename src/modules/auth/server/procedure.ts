@@ -85,8 +85,6 @@ export const authRouter = createTRPCRouter({
             }
         }),
 
-
-
     login: baseProcedure
         .input(loginSchema).mutation(async({input, ctx}) => {
             const data = await ctx.db.login({
@@ -120,4 +118,6 @@ export const authRouter = createTRPCRouter({
 
             return true;
         }),
+
+    
 });

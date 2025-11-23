@@ -44,6 +44,56 @@ export const Users: CollectionConfig = {
       type: "text",
     },
     {
+      name: "googleId",
+      label: "Google Account ID",
+      type: "text",
+      unique: true,
+      admin: {
+        position: "sidebar",
+        description: "Linked Google account identifier (sub)."
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      }
+    },
+    {
+      name: "googleEmail",
+      label: "Google Email",
+      type: "email",
+      unique: false,
+      admin: {
+        position: "sidebar",
+        description: "Email returned from Google OAuth (for MFA / SSO)."
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      }
+    },
+    {
+      name: "mfaGoogleEnabled",
+      label: "MFA via Google Enabled",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        description: "Require Google re-auth as second factor."
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      }
+    },
+    {
+      name: "mfaGoogleVerifiedAt",
+      label: "Last Google MFA Verification",
+      type: "date",
+      admin: {
+        position: "sidebar",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      }
+    },
+    {
       admin: {
         position: "sidebar",
       },

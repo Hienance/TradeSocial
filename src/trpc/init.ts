@@ -4,6 +4,8 @@ import { cache } from 'react';
 import config from "@payload-config";
 import superjson from 'superjson';
 import { headers as getHeaders } from 'next/headers';
+import { getServerSession } from 'next-auth';
+import authOptions from '@/modules/auth/server/auth-options';
 
 export const createTRPCContext = cache(async () => {
   /**
@@ -32,22 +34,45 @@ export const baseProcedure = t.procedure.use(async({ next }) =>{
 
 export const protectedProcedure = baseProcedure.use(async({ctx, next}) => {
   const headers = await getHeaders();
-  const session = await  ctx.db.auth({headers});
+  // Primary: Payload auth
+  const payloadSession = await ctx.db.auth({ headers });
+  let user: any = payloadSession.user;
 
-  if (!session.user) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Must be logged in",
-    })
-  };
+  // Fallback: NextAuth session (Google OAuth)
+  if (!user) {
+    const nextAuthSession = await getServerSession(authOptions);
+    if (nextAuthSession?.user?.email) {
+      // Attempt to map to Payload user by email for unified access control
+      const found = await ctx.db.find({
+        collection: 'users',
+        limit: 1,
+        where: { email: { equals: nextAuthSession.user.email } },
+      });
+      user = found.docs[0];
+    }
+  }
+
+  if (!user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Must be logged in' });
+  }
+
+  // MFA check: if Google MFA enabled ensure recent verification timestamp exists (within 12h)
+  if (user.mfaGoogleEnabled) {
+    const verifiedAt = user.mfaGoogleVerifiedAt ? new Date(user.mfaGoogleVerifiedAt) : null;
+    const twelveHoursMs = 12 * 60 * 60 * 1000;
+    const now = Date.now();
+    if (!verifiedAt || now - verifiedAt.getTime() > twelveHoursMs) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'MFA Google verification required' });
+    }
+  }
 
   return next({
     ctx: {
       ...ctx,
       session: {
-        ...session,
-        user: session.user,
+        user,
+        payloadToken: payloadSession?.token,
       },
     },
   });
-})
+});

@@ -138,6 +138,19 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   username: string;
+  /**
+   * Linked Google account identifier (sub).
+   */
+  googleId?: string | null;
+  /**
+   * Email returned from Google OAuth (for MFA / SSO).
+   */
+  googleEmail?: string | null;
+  /**
+   * Require Google re-auth as second factor.
+   */
+  mfaGoogleEnabled?: boolean | null;
+  mfaGoogleVerifiedAt?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
   tenants?:
     | {
@@ -438,6 +451,10 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  googleId?: T;
+  googleEmail?: T;
+  mfaGoogleEnabled?: T;
+  mfaGoogleVerifiedAt?: T;
   roles?: T;
   tenants?:
     | T
