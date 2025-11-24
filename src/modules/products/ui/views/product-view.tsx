@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { CheckIcon, LinkIcon, StarIcon } from "lucide-react";
+import { BookmarkCheckIcon, CheckIcon, LinkIcon, StarIcon } from "lucide-react";
 import { defaultJSXConverters, RichText } from "@payloadcms/richtext-lexical/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,6 +36,7 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
     const [isCopied, setIsCopied] = useState(false);
 
     return (
+        
         <div className="px-4 lg:px-12 py-10">
             <div className="border rounded-sm bg-white overflow-hidden">
                 <div className="relative aspect-[3.9] border-b">
@@ -108,11 +109,22 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                         <div className="border-t lg:border-t-0 lg:border-l h-full">
                             <div className="flex flex-col gap-4 p-6 border-b">
                                 <div className="flex flex-row items-center gap-2">
+                                    {/*TODO: use data.isPurchased to change state later */}
                                     <CartButton 
-                                        isPurchased={data.isPurchased} 
+                                        isPurchased={data.isPurchased}
                                         productId={productId} 
                                         tenantSlug={tenantSlug}
                                     />
+                                    {data.isPurchased && (
+                                        <Button 
+                                            className="size-12"
+                                            variant="elevated"
+                                        >
+                                            <Link prefetch href={`${process.env.NEXT_PUBLIC_APP_URL}/library/${productId}`}>
+                                                <BookmarkCheckIcon/>
+                                            </Link>
+                                        </Button>
+                                    )}
                                     <Button 
                                         className="size-12"
                                         variant="elevated"
