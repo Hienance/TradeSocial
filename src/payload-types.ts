@@ -190,6 +190,10 @@ export interface Tenant {
    * This will be the subdomain of the store (e.g. [slug].TradeSocial.com)
    */
   slug: string;
+  /**
+   * This will be the description of the store (e.g. A cozy little shop selling handmade goods)
+   */
+  description?: string | null;
   image?: (string | null) | Media;
   /**
    * Stripe Account ID associated with your shop
@@ -548,6 +552,7 @@ export interface TagsSelect<T extends boolean = true> {
 export interface TenantsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  description?: T;
   image?: T;
   stripeAccountId?: T;
   stripeDetailsSubmitted?: T;

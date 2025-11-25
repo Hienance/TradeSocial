@@ -76,6 +76,7 @@ export const Navbar = () => {
             </Link>
 
             <NavbarSidebar
+                session={!!session.data?.user}
                 items={navbarItems}
                 open={isSideBarOpen}
                 onOpenChange={setIsSideBarOpen}
@@ -113,7 +114,6 @@ export const Navbar = () => {
                         try {
                             await logout.mutateAsync();
                         } catch {
-                            /* error handled in onError */
                         }
                     }}
                     disabled={logout.isPending}
