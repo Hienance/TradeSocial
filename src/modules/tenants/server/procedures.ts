@@ -1,4 +1,5 @@
 import z from "zod";
+import { sanitizeInput } from "@/lib/sanitize";
 
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { Tenant, Media } from "@/payload-types";
@@ -13,11 +14,12 @@ export const tenantsRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+    const safeInput = sanitizeInput(input);
     const tenantsData = await ctx.db.find({
         collection: "tenants",
         where: {
             slug: {
-                equals: input.slug,
+                equals: safeInput.slug,
             },
         },
         limit: 1,

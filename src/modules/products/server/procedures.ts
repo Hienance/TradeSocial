@@ -1,4 +1,5 @@
 import z from "zod";
+import { sanitizeInput } from "@/lib/sanitize";
 
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { Sort, Where } from "payload";
@@ -17,12 +18,13 @@ export const productsRouter = createTRPCRouter({
             })
         )
         .query(async  ({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
             const headers = await getHeaders();
             const session = await ctx.db.auth({headers});
 
             const product = await ctx.db.findByID({
                 collection: "products",
-                id: input.id,
+                id: safeInput.id,
                 depth: 2,
                 select: {
                     content: false,
@@ -46,7 +48,7 @@ export const productsRouter = createTRPCRouter({
                         and: [
                             {
                                 product: {
-                                    equals: input.id,
+                                    equals: safeInput.id,
                                 },
                             },
                             {
@@ -66,7 +68,7 @@ export const productsRouter = createTRPCRouter({
                 pagination: false,
                 where: {
                     product: {
-                        equals: input.id,
+                        equals: safeInput.id,
                     },
                 },
             });
@@ -127,6 +129,7 @@ export const productsRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
 
             const where: Where = {
                 isArchived: {
@@ -135,36 +138,36 @@ export const productsRouter = createTRPCRouter({
             };
             let sort: Sort = "-createdAt";
 
-            if (input.sort === "curated") {
+            if (safeInput.sort === "curated") {
                 sort = "name";
             }
 
-            if (input.sort === "trending") {
+            if (safeInput.sort === "trending") {
                 sort = "-createdAt";
             }
 
-            if (input.sort === "hot_and_new") {
+            if (safeInput.sort === "hot_and_new") {
                 sort = "+createdAt";
             }
 
-            if (input.minPrice && input.maxPrice) {
+            if (safeInput.minPrice && safeInput.maxPrice) {
                 where.price = {
-                    greater_than_equal: input.minPrice,
-                    less_than_equal: input.maxPrice,
+                    greater_than_equal: safeInput.minPrice,
+                    less_than_equal: safeInput.maxPrice,
                 }
-            } else if (input.minPrice) {
+            } else if (safeInput.minPrice) {
                 where.price = {
-                    greater_than_equal: input.minPrice,
+                    greater_than_equal: safeInput.minPrice,
                 }
-            } else if (input.maxPrice) {
+            } else if (safeInput.maxPrice) {
                 where.price = {
-                    less_than_equal: input.maxPrice
+                    less_than_equal: safeInput.maxPrice
                 }
             }
 
-            if (input.tenantSlug) {
+            if (safeInput.tenantSlug) {
                 where["tenant.slug"] = {
-                    equals: input.tenantSlug,
+                    equals: safeInput.tenantSlug,
                 };
             } else {
                 where["isPrivate"] = {
@@ -172,7 +175,7 @@ export const productsRouter = createTRPCRouter({
                 }
             }
 
-            if (input.category) {
+            if (safeInput.category) {
                 const categoriesData = await ctx.db.find({
                     collection: "categories",
                     limit: 1,
@@ -180,7 +183,7 @@ export const productsRouter = createTRPCRouter({
                     pagination: false,
                     where: {
                         slug: {
-                            equals: input.category,
+                            equals: safeInput.category,
                         }
                     }
                 });
@@ -208,15 +211,15 @@ export const productsRouter = createTRPCRouter({
                 }
             }
 
-    if (input.tags && input.tags.length > 0) {
+    if (safeInput.tags && safeInput.tags.length > 0) {
         where["tags.name"] = {
-            in: input.tags,
+            in: safeInput.tags,
         };
     }
 
-    if (input.search) {
+    if (safeInput.search) {
         where["name"] = {
-            like: input.search,
+            like: safeInput.search,
         };
     }
 
@@ -225,8 +228,8 @@ export const productsRouter = createTRPCRouter({
         depth: 2, //populate category and images
         where,
         sort,
-        page: input.cursor,
-        limit: input.limit,
+        page: safeInput.cursor,
+        limit: safeInput.limit,
         select: {
             content: false,
         },

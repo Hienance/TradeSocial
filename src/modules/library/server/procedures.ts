@@ -1,4 +1,5 @@
 import z from "zod";
+import { sanitizeInput } from "@/lib/sanitize";
 
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { Media, Tenant } from "@/payload-types";
@@ -14,6 +15,7 @@ export const libraryRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
             const ordersData = await ctx.db.find({
                 collection: "orders",
                 pagination: false,
@@ -22,7 +24,7 @@ export const libraryRouter = createTRPCRouter({
                     and: [
                         {
                             product: {
-                                equals: input.productId,
+                                equals: safeInput.productId,
                             },
                         },
                         {
@@ -45,7 +47,7 @@ export const libraryRouter = createTRPCRouter({
 
             const product = await ctx.db.findByID ({
                 collection: "products",
-                id: input.productId,
+                id: safeInput.productId,
             });
 
             if (!product) {
@@ -61,7 +63,7 @@ export const libraryRouter = createTRPCRouter({
                 pagination: false,
                 where: {
                     product: {
-                        equals: input.productId,
+                        equals: safeInput.productId,
                     },
                 },
             });
@@ -113,11 +115,12 @@ export const libraryRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
             const data = await ctx.db.find({
                 collection: "orders",
                 depth: 0,
-                page: input.cursor,
-                limit: input.limit,
+                page: safeInput.cursor,
+                limit: safeInput.limit,
                 where: {
                     user: {
                         equals: ctx.session.user.id,

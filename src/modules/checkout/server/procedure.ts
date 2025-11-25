@@ -1,4 +1,5 @@
 import z from "zod";
+import { sanitizeInput } from "@/lib/sanitize";
 import { baseProcedure, createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { Media, Tenant } from "@/payload-types";
 import { TRPCError } from "@trpc/server";
@@ -65,6 +66,7 @@ export const checkoutRouter = createTRPCRouter({
             })
         )
         .mutation(async ({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
             const products = await ctx.db.find({
                 collection: "products",
                 depth: 2,
@@ -75,12 +77,12 @@ export const checkoutRouter = createTRPCRouter({
                     and: [
                         {
                             id: {
-                                in: input.productIds,
+                                in: safeInput.productIds,
                             }
                         },
                         {
                             "tenant.slug": {
-                                equals: input.tenantSlug,
+                                equals: safeInput.tenantSlug,
                             }
                         },
                         {
@@ -92,7 +94,7 @@ export const checkoutRouter = createTRPCRouter({
                 }
             })
 
-            if (products.totalDocs !== input.productIds.length) {
+            if (products.totalDocs !== safeInput.productIds.length) {
                 throw new TRPCError({code: "NOT_FOUND", message: "Products not found"});
             }
 
@@ -102,7 +104,7 @@ export const checkoutRouter = createTRPCRouter({
                 pagination: false,
                 where: {
                     slug: {
-                        equals: input.tenantSlug,
+                        equals: safeInput.tenantSlug,
                     },
                 },
             });
@@ -148,7 +150,7 @@ export const checkoutRouter = createTRPCRouter({
 
             const platformFeeAmount = Math.round( totalAmount * (PLATFORM_FEE_PERCENTAGE/100)); // 10% platform fee
 
-            const domain = generateTenantURL(input.tenantSlug);
+            const domain = generateTenantURL(safeInput.tenantSlug);
 
             const checkout = await stripe.checkout.sessions.create({
                 customer_email: ctx.session.user.email,
@@ -183,6 +185,7 @@ export const checkoutRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+            const safeInput = sanitizeInput(input);
             const data = await ctx.db.find({
                 collection: "products",
                 depth: 2,
@@ -190,7 +193,7 @@ export const checkoutRouter = createTRPCRouter({
                     and: [
                         {
                             id: {
-                                in: input.ids,
+                                in: safeInput.ids,
                             },
                         },
                         {
@@ -202,7 +205,7 @@ export const checkoutRouter = createTRPCRouter({
                 },
             });
 
-        if (data.totalDocs !== input.ids.length) {
+        if (data.totalDocs !== safeInput.ids.length) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Product not found"});
         }
 

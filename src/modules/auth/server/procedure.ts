@@ -2,6 +2,7 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { headers as getHeaders} from "next/headers";
 import { loginSchema, registerSchema } from "../schemas";
+import { sanitizeInput } from "@/lib/sanitize";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
 
@@ -16,12 +17,13 @@ export const authRouter = createTRPCRouter({
 
     register: baseProcedure
         .input(registerSchema).mutation(async({input, ctx}) => {
+            const safeInput = sanitizeInput(input);
             const existingData = await ctx.db.find({
                 collection: "users",
                 limit: 1,
                 where: {
                     username: {
-                        equals: input.username,
+                        equals: safeInput.username,
                     },
                 },
             });
@@ -49,8 +51,8 @@ export const authRouter = createTRPCRouter({
             const tenant = await ctx.db.create({
                 collection: "tenants",
                 data: {
-                    name: input.username,
-                    slug: input.username,
+                    name: safeInput.username,
+                    slug: safeInput.username,
                     stripeAccountId: account.id,
                 }
             })
@@ -58,9 +60,9 @@ export const authRouter = createTRPCRouter({
             await ctx.db.create({
                 collection: "users",
                 data: {
-                    email: input.email,
-                    username: input.username,
-                    password: input.password, // this will be hashed
+                    email: safeInput.email,
+                    username: safeInput.username,
+                    password: safeInput.password, // this will be hashed
                     tenants: [ 
                         {
                             tenant: tenant.id,
@@ -72,8 +74,8 @@ export const authRouter = createTRPCRouter({
             const data = await ctx.db.login({
                 collection: "users",
                 data: {
-                    email: input.email,
-                    password: input.password,
+                    email: safeInput.email,
+                    password: safeInput.password,
                 },
             });
 
@@ -87,11 +89,12 @@ export const authRouter = createTRPCRouter({
 
     login: baseProcedure
         .input(loginSchema).mutation(async({input, ctx}) => {
+            const safeInput = sanitizeInput(input);
             const data = await ctx.db.login({
                 collection: "users",
                 data: {
-                    email: input.email,
-                    password: input.password,
+                    email: safeInput.email,
+                    password: safeInput.password,
                 },
             });
 

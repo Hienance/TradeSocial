@@ -1,4 +1,5 @@
 import z from "zod";
+import { sanitizeInput } from "@/lib/sanitize";
 
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
@@ -12,9 +13,10 @@ export const reviewsRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+    const safeInput = sanitizeInput(input);
     const product = await ctx.db.findByID({
         collection: "products",
-        id: input.productId,
+        id: safeInput.productId,
     });
 
     if (!product) {
@@ -31,7 +33,7 @@ export const reviewsRouter = createTRPCRouter({
             and: [
                 {                
                     product: {
-                        equals: input.productId,
+                        equals: safeInput.productId,
                     },
                 },
                 {
@@ -61,9 +63,10 @@ export const reviewsRouter = createTRPCRouter({
             })
         )
         .mutation(async ({input, ctx}) => {
+            const safeInput = sanitizeInput(input);
             const product = await ctx.db.findByID({
                 collection: "products",
-                id: input.productId,
+                id: safeInput.productId,
             });
 
             if (!product) {
@@ -79,7 +82,7 @@ export const reviewsRouter = createTRPCRouter({
                     and: [
                         {
                             product: {
-                                equals: input.productId,
+                                equals: safeInput.productId,
                             }
                         },
                         {
@@ -103,8 +106,8 @@ export const reviewsRouter = createTRPCRouter({
                 data: {
                     user: ctx.session.user.id,
                     product: product.id,
-                    rating: input.rating,
-                    description: input.description,
+                    rating: safeInput.rating,
+                    description: safeInput.description,
                 },
             });
 
@@ -120,10 +123,11 @@ export const reviewsRouter = createTRPCRouter({
             })
         )
         .mutation(async ({input, ctx}) => {
+            const safeInput = sanitizeInput(input);
             const existingReview = await ctx.db.findByID({
                 depth: 0,
                 collection: "reviews",
-                id: input.reviewId, 
+                id: safeInput.reviewId, 
             });
 
             if (!existingReview) {
@@ -142,10 +146,10 @@ export const reviewsRouter = createTRPCRouter({
              
             const updatedReview = await ctx.db.update({
                 collection: "reviews",
-                id: input.reviewId,
+                id: safeInput.reviewId,
                 data: { 
-                    rating: input.rating,
-                    description: input.description,
+                    rating: safeInput.rating,
+                    description: safeInput.description,
                 },
             });
 
