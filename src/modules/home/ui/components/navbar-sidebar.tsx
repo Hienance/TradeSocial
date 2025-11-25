@@ -6,6 +6,10 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface NavbarItem {
     href: string;
@@ -15,14 +19,31 @@ interface NavbarItem {
 interface Props {
     items: NavbarItem[];
     open: boolean;
+    session?: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
 export const NavbarSidebar = ({
     items,
     open,
+    session,
     onOpenChange,
 }: Props) => {
+
+        const router = useRouter();
+        const trpc = useTRPC();
+        const sessions = useQuery(trpc.auth.session.queryOptions());
+        const logout = useMutation(trpc.auth.logout.mutationOptions({
+            onError: (error) => {
+                toast.error(error?.message ?? "Failed to logout");
+            },
+            onSuccess: async () => {
+                // update session state so Navbar re-renders without user
+                await sessions.refetch();
+                router.push("/");
+            },
+        }));
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -37,30 +58,58 @@ export const NavbarSidebar = ({
                     </div>
                 </SheetHeader>
                 <ScrollArea className=" flex flex-col overflow-y-auto h-full pb-2">
-                 {items.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        {item.children}
-                    </Link>
-                 ))}
-                 <div className="border-t">
-                    <Link href="/sign-in"
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    onClick={() => onOpenChange(false)}
-                    >
-                        Login
-                    </Link>
-                    <Link href="/sign-up"
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    onClick={() => onOpenChange(false)}
-                    >
-                        Sign up!
-                    </Link>
-                 </div>
+                    {items.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            {item.children}
+                        </Link>
+                    ))}
+                    {session ? (
+                        <div className="border-t">
+                            <Link 
+                                href="/Dashboard"
+                                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Dashboard
+                            </Link>
+                            <Link
+                                href="/"
+                                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                                onClick={async () => {
+                                    try {
+                                        await logout.mutateAsync();
+                                    } catch {
+                                        /* error handled in onError */
+                                    }
+                                }}
+                            >
+                                Logout
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="border-t">
+                            <Link 
+                                href="/sign-in"
+                                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Login
+                            </Link>
+                            <Link 
+                                href="/sign-up"
+                                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Sign up!
+                            </Link>
+                        </div>
+                    )}
+
                 </ScrollArea>
             </SheetContent>
         </Sheet>

@@ -33,6 +33,14 @@ export const Tenants: CollectionConfig = {
             description: "This will be the subdomain of the store (e.g. [slug].TradeSocial.com)",
       }
     },
+        {
+      name: "description",
+      type: "text",
+      label: "Store description",
+      admin: {
+        description: "This will be the description of the store (e.g. A cozy little shop selling handmade goods)",
+      }
+    },
     {
         name: "image",
         type: "upload",
