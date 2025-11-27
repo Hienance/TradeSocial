@@ -189,7 +189,7 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                     <div key={review.id} className="p-6">
                                         <div className="flex items-start gap-4">
                                             <Image
-                                                src="/Default_pfp.jpg"
+                                                src="/default_pfp.jpg"
                                                 alt={user?.username || "User"}
                                                 width={48}
                                                 height={48}
