@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Poppins } from "next/font/google"
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/lib/utils";
+import { cn, generateTenantURL } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NavbarSidebar } from "./navbar-sidebar";
 import { useState } from "react";
@@ -96,17 +96,19 @@ export const Navbar = () => {
 
             {session.data?.user ? (
             <div className="hidden lg:flex">
-                <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
                     {isSuperAdmin(session.data.user) ? (
                     <Link href="/admin">
+                        <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
                         Dashboard
+                        </Button>
                     </Link>
                     ) : (
-                    <Link href="/admin"> {/*TODO {`${generateTenantURL(session.data.user.username)}/profile`}*/} 
-                        Profile
+                    <Link prefetch href={`${generateTenantURL(session.data.user.username)}/profile`}>
+                        <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
+                        Dashboard
+                        </Button>
                     </Link>
                     )}
-                </Button>
                 <Button 
                     variant="secondary"
                     className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-white hover:bg-pink-400 transition-color"
@@ -123,16 +125,16 @@ export const Navbar = () => {
                 </div>
             ) : (
             <div className="hidden lg:flex">
-                <Button variant="secondary" className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-white hover:bg-pink-400 transition-color">
-                    <Link prefetch href="/sign-in">
-                        Login
-                    </Link>
-                </Button>
-                <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
-                    <Link prefetch href="/sign-up">
-                        Sign up!
-                    </Link>
-                </Button>
+                <Link prefetch href="/sign-in">
+                    <Button variant="secondary" className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-white hover:bg-pink-400 transition-color">
+                            Login
+                    </Button>
+                </Link>
+                <Link prefetch href="/sign-up">
+                    <Button className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
+                            Sign up!
+                    </Button>
+                </Link>
             </div>
             )}
 

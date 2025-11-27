@@ -12,51 +12,123 @@ import { Separator } from "@/components/ui/separator";
 import { Table } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { cn, generateTenantURL } from "@/lib/utils";
-import { Plus, Settings, Package, Image as LayoutDashboard, Save } from "lucide-react";
+import { cn, formatCurrency, generateTenantURL } from "@/lib/utils";
+import { Plus, Settings, Package, Image as LayoutDashboard, Save, ShieldCheck, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useTRPC } from "@/trpc/client";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CreateProductDialog } from "../components/create-product-dialog";
+import { EditProductDialog } from "../components/edit-product-dialog";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
-// Placeholder data — will be replaced by backend integration later.
-const MOCK_PRODUCTS = Array.from({ length: 5 }).map((_, i) => ({
-	id: `prod_${i + 1}`,
-	name: `Sample Product ${i + 1}`,
-	price: (i + 1) * 12,
-	status: i % 2 === 0 ? "active" : "draft",
-}));
-
-const MOCK_ORDERS = Array.from({ length: 4 }).map((_, i) => ({
-	id: `ord_${i + 1}`,
-	total: (i + 2) * 25,
-	items: (i + 1) * 3,
-	status: ["pending", "fulfilled", "refunded", "shipped"][i],
-}));
-
 export function ProfileView() {
-	const [tenantName, setTenantName] = useState("Your Tenant Name");
-	const [tenantSlug, setTenantSlug] = useState("your-slug");
-	const [tenantDesc, setTenantDesc] = useState("Short description of the tenant store.");
-	const [saving, setSaving] = useState(false);
+	const trpc = useTRPC();
+	
+	// Fetch tenant data
+	const { data: tenant, refetch: refetchTenant } = useSuspenseQuery(
+		trpc.profiles.getTenant.queryOptions()
+	);
+	
+	// Fetch products
+	const { data: products, refetch: refetchProducts } = useSuspenseQuery(
+		trpc.profiles.getMyProducts.queryOptions({
+			page: 1,
+			limit: 50,
+			includeArchived: true,
+		})
+	);
 
-	const handleSaveSettings = async () => {
-		setSaving(true);
-		// Simulate async save
-		setTimeout(() => setSaving(false), 800);
+	const [tenantName, setTenantName] = useState(tenant.name);
+	const [tenantDesc, setTenantDesc] = useState(tenant.description || "");
+	
+	// Update tenant mutation
+	const { mutate: updateTenant, isPending: isSaving } = useMutation(
+		trpc.profiles.updateTenant.mutationOptions({
+			onSuccess: () => {
+				toast.success("Settings saved successfully");
+				refetchTenant();
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to save settings");
+			},
+		})
+	);
+
+	// Stripe verification mutation
+	const { mutate: verifyStripe, isPending: isVerifying } = useMutation(
+		trpc.checkout.verify.mutationOptions({
+			onSuccess: (data) => {
+				window.location.href = data.url;
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to start verification");
+			},
+		})
+	);
+
+	// Archive product mutation
+	const { mutate: archiveProduct } = useMutation(
+		trpc.profiles.archiveProduct.mutationOptions({
+			onSuccess: () => {
+				toast.success("Product archived successfully");
+				refetchProducts();
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to archive product");
+			},
+		})
+	);
+
+	// Toggle product privacy mutation
+	const { mutate: togglePrivacy } = useMutation(
+		trpc.profiles.toggleProductPrivacy.mutationOptions({
+			onSuccess: () => {
+				toast.success("Product privacy updated");
+				refetchProducts();
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to update privacy");
+			},
+		})
+	);
+
+	const handleSaveSettings = () => {
+		updateTenant({
+			name: tenantName,
+			description: tenantDesc || null,
+		});
 	};
+
+	const handleVerifyStripe = () => {
+		verifyStripe();
+	};
+
+	const activeProducts = products.docs.filter(p => !p.isArchived);
 
 	return (
 		<div className="flex flex-col gap-8 p-4 lg:p-10 max-w-[1400px] mx-auto">
+			{!tenant.stripeDetailsSubmitted && (
+				<Alert>
+					<AlertCircle className="h-4 w-4" />
+					<AlertDescription>
+						Your Stripe account needs verification before you can add products. Please verify your account in the settings tab.
+					</AlertDescription>
+				</Alert>
+			)}
 			<header className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
 				<div className="flex items-center gap-4">
 					<div>
-						<h1 className={cn("text-4xl font-semibold", poppins.className)}>{tenantName}</h1>
-						<p className="text-muted-foreground">Manage your store, products, media & orders</p>
+						<h1 className={cn("text-4xl font-semibold", poppins.className)}>{tenant.name}</h1>
+						<p className="text-muted-foreground">Manage your store, products & orders</p>
 					</div>
 				</div>
 				<div className="flex gap-3">
 					<Button variant="elevated" className="rounded-full">
-						<Link href={generateTenantURL(tenantSlug)}>
+						<Link href={generateTenantURL(tenant.slug)}>
 							View Store
 						</Link>
 					</Button>
@@ -72,61 +144,71 @@ export function ProfileView() {
 
 				{/* Dashboard */}
 				<TabsContent value="dashboard" className="space-y-6">
-					<div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+					<div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
 						<Card>
 							<CardHeader>
 								<CardTitle>Products</CardTitle>
 								<CardDescription>Total active products</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<p className="text-4xl font-semibold">{MOCK_PRODUCTS.filter(p => p.status === 'active').length}</p>
+								<p className="text-4xl font-semibold">{activeProducts.length}</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader>
-								<CardTitle>Orders</CardTitle>
-								<CardDescription>All-time orders</CardDescription>
+								<CardTitle>Private Products</CardTitle>
+								<CardDescription>Store-only visibility</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<p className="text-4xl font-semibold">{MOCK_ORDERS.length}</p>
+								<p className="text-4xl font-semibold">{activeProducts.filter(p => p.isPrivate).length}</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader>
-								<CardTitle>Revenue</CardTitle>
-								<CardDescription>Approximate total</CardDescription>
+								<CardTitle>Stripe Status</CardTitle>
+								<CardDescription>Account verification</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<p className="text-4xl font-semibold">${MOCK_ORDERS.reduce((a,o)=>a+o.total,0)}</p>
+								<Badge variant={tenant.stripeDetailsSubmitted ? "default" : "secondary"}>
+									{tenant.stripeDetailsSubmitted ? "Verified" : "Pending"}
+								</Badge>
 							</CardContent>
 						</Card>
 					</div>
 					<Card>
 						<CardHeader>
-							<CardTitle>Recent Orders</CardTitle>
-							<CardDescription>Latest activity snapshot</CardDescription>
+							<CardTitle>Recent Products</CardTitle>
+							<CardDescription>Your latest listings</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Table>
-								<thead>
-									<tr className="text-left text-sm text-muted-foreground">
-										<th className="font-medium py-2">Order ID</th>
-										<th className="font-medium py-2">Items</th>
-										<th className="font-medium py-2">Total</th>
-										<th className="font-medium py-2">Status</th>
-									</tr>
-								</thead>
-								<tbody>
-									{MOCK_ORDERS.map(o => (
-										<tr key={o.id} className="border-t">
-											<td className="py-2 text-sm">{o.id}</td>
-											<td className="py-2 text-sm">{o.items}</td>
-											<td className="py-2 text-sm">${o.total}</td>
-											<td className="py-2 text-sm"><Badge variant={o.status === 'fulfilled' ? 'default' : 'secondary'}>{o.status}</Badge></td>
+							{activeProducts.length > 0 ? (
+								<Table>
+									<thead>
+										<tr className="text-left text-sm text-muted-foreground">
+											<th className="font-medium py-2">Name</th>
+											<th className="font-medium py-2">Price</th>
+											<th className="font-medium py-2">Visibility</th>
 										</tr>
-									))}
-								</tbody>
-							</Table>
+									</thead>
+									<tbody>
+										{activeProducts.slice(0, 5).map(p => (
+											<tr key={p.id} className="border-t">
+												<td className="py-2 text-sm">{p.name}</td>
+												<td className="py-2 text-sm">{formatCurrency(p.price)}</td>
+												<td className="py-2 text-sm">
+													<Badge variant={p.isPrivate ? 'secondary' : 'default'}>
+														{p.isPrivate ? 'Private' : 'Public'}
+													</Badge>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</Table>
+							) : (
+								<p className="text-muted-foreground text-center py-8">
+									No products yet. Create your first product to get started!
+								</p>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -135,32 +217,81 @@ export function ProfileView() {
 				<TabsContent value="products" className="space-y-6">
 					<div className="flex justify-between items-center">
 						<h2 className={cn("text-2xl font-semibold", poppins.className)}>Products</h2>
-						<Button><Plus className="h-4 w-4 mr-2"/>Add Product</Button>
+						<CreateProductDialog 
+							disabled={!tenant.stripeDetailsSubmitted}
+							onSuccess={refetchProducts}
+						/>
 					</div>
+					{!tenant.stripeDetailsSubmitted && (
+						<Alert>
+							<AlertCircle className="h-4 w-4" />
+							<AlertDescription>
+								Verify your Stripe account to add products.
+							</AlertDescription>
+						</Alert>
+					)}
 					<Card>
 						<CardContent className="p-0">
-							<ScrollArea className="max-h-[400px]">
-								<Table>
-									<thead>
-										<tr className="text-left text-sm text-muted-foreground">
-											<th className="font-medium py-2 px-4">Name</th>
-											<th className="font-medium py-2 px-4">Price</th>
-											<th className="font-medium py-2 px-4">Status</th>
-											<th className="font-medium py-2 px-4">Actions</th>
-										</tr>
-									</thead>
-									<tbody>
-										{MOCK_PRODUCTS.map(p => (
-											<tr key={p.id} className="border-t">
-												<td className="py-2 px-4 text-sm">{p.name}</td>
-												<td className="py-2 px-4 text-sm">${p.price}</td>
-												<td className="py-2 px-4 text-sm"><Badge variant={p.status === 'active' ? 'default' : 'secondary'}>{p.status}</Badge></td>
-												<td className="py-2 px-4 text-sm"><Button variant="ghost" size="sm">Edit</Button></td>
+							{products.docs.length > 0 ? (
+								<ScrollArea className="max-h-[600px]">
+									<Table>
+										<thead>
+											<tr className="text-left text-sm text-muted-foreground">
+												<th className="font-medium py-2 px-4">Name</th>
+												<th className="font-medium py-2 px-4">Price</th>
+												<th className="font-medium py-2 px-4">Status</th>
+												<th className="font-medium py-2 px-4 text-center">Private</th>
+												<th className="font-medium py-2 px-4 text-center">Archived</th>
+												<th className="font-medium py-2 px-4">Actions</th>
 											</tr>
-										))}
-									</tbody>
-								</Table>
-							</ScrollArea>
+										</thead>
+										<tbody>
+											{products.docs.map(p => (
+												<tr key={p.id} className={cn("border-t", p.isArchived && "opacity-60")}>
+													<td className="py-2 px-4 text-sm font-medium">{p.name}</td>
+													<td className="py-2 px-4 text-sm">{formatCurrency(p.price)}</td>
+													<td className="py-2 px-4 text-sm">
+														<Badge variant={p.isArchived ? 'secondary' : 'default'}>
+															{p.isArchived ? 'Archived' : 'Active'}
+														</Badge>
+													</td>
+													<td className="py-2 px-4 text-sm">
+														<div className="flex justify-center">
+															<Checkbox
+																checked={!!p.isPrivate}
+																onCheckedChange={(checked) => 
+																	togglePrivacy({ id: p.id, isPrivate: !!checked })
+																}
+															/>
+														</div>
+													</td>
+													<td className="py-2 px-4 text-sm">
+														<div className="flex justify-center">
+															<Checkbox
+																checked={!!p.isArchived}
+																onCheckedChange={(checked) => 
+																	archiveProduct({ id: p.id, isArchived: !!checked })
+																}
+															/>
+														</div>
+													</td>
+													<td className="py-2 px-4 text-sm">
+														<EditProductDialog product={p} onSuccess={refetchProducts} />
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</Table>
+								</ScrollArea>
+							) : (
+								<div className="p-12 text-center">
+									<p className="text-muted-foreground mb-4">No products yet</p>
+									<CreateProductDialog 
+										disabled={!tenant.stripeDetailsSubmitted}
+										onSuccess={refetchProducts}
+									/>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -168,6 +299,49 @@ export function ProfileView() {
 				{/* Settings */}
 				<TabsContent value="settings" className="space-y-6">
 					<h2 className={cn("text-2xl font-semibold", poppins.className)}>Store Settings</h2>
+					
+					{/* Stripe Verification Card */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Stripe Account</CardTitle>
+							<CardDescription>Manage your payment account verification</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="flex items-center justify-between">
+								<div className="space-y-1">
+									<p className="text-sm font-medium">Verification Status</p>
+									<div className="flex items-center gap-2">
+										<Badge variant={tenant.stripeDetailsSubmitted ? "default" : "secondary"}>
+											{tenant.stripeDetailsSubmitted ? "Verified" : "Not Verified"}
+										</Badge>
+										{tenant.stripeDetailsSubmitted && (
+											<ShieldCheck className="h-4 w-4 text-green-600" />
+										)}
+									</div>
+								</div>
+								{!tenant.stripeDetailsSubmitted && (
+									<Button 
+										onClick={handleVerifyStripe}
+										disabled={isVerifying}
+										variant="elevated"
+									>
+										<ShieldCheck className="h-4 w-4 mr-2"/>
+										{isVerifying ? 'Redirecting...' : 'Verify Stripe Account'}
+									</Button>
+								)}
+							</div>
+							{!tenant.stripeDetailsSubmitted && (
+								<Alert>
+									<AlertCircle className="h-4 w-4" />
+									<AlertDescription>
+										You must complete Stripe verification before you can create products and receive payments.
+									</AlertDescription>
+								</Alert>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* General Settings Card TODO: Add the ability to change profile picture */}
 					<Card>
 						<CardHeader>
 							<CardTitle>General</CardTitle>
@@ -175,20 +349,40 @@ export function ProfileView() {
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="grid gap-2">
-								<label className="text-sm font-medium">Name</label>
-								<Input value={tenantName} onChange={(e)=>setTenantName(e.target.value)} />
+								<label className="text-sm font-medium">Store Name</label>
+								<Input 
+									value={tenantName} 
+									onChange={(e)=>setTenantName(e.target.value)} 
+									placeholder="Enter your store name"
+								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-sm font-medium">Slug</label>
-								<Input value={tenantSlug} onChange={(e)=>setTenantSlug(e.target.value)} />
+								<label className="text-sm font-medium">Store URL</label>
+								<Input 
+									value={tenant.slug} 
+									disabled
+									className="bg-muted"
+								/>
+								<p className="text-xs text-muted-foreground">
+									Store URL cannot be changed
+								</p>
 							</div>
 							<div className="grid gap-2">
 								<label className="text-sm font-medium">Description</label>
-								<Textarea value={tenantDesc} onChange={(e)=>setTenantDesc(e.target.value)} />
+								<Textarea 
+									value={tenantDesc} 
+									onChange={(e)=>setTenantDesc(e.target.value)} 
+									placeholder="Describe your store..."
+									rows={4}
+								/>
 							</div>
-							<Button disabled={saving} onClick={handleSaveSettings} className="gap-2">
+							<Button 
+								disabled={isSaving} 
+								onClick={handleSaveSettings} 
+								className="gap-2"
+							>
 								<Save className="h-4 w-4"/>
-								{saving ? 'Saving...' : 'Save Changes'}
+								{isSaving ? 'Saving...' : 'Save Changes'}
 							</Button>
 						</CardContent>
 					</Card>
