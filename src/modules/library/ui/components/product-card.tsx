@@ -8,6 +8,7 @@ interface ProductCardProp {
     name: string;
     imageUrl?: string | null;
     tenantSlug: string;
+    tenantName: string;
     tenantImageUrl?: string | null;
     reviewRating: number;
     reviewCount: number;
@@ -18,6 +19,7 @@ export const ProductCard = ({
     name,
     imageUrl,
     tenantSlug,
+    tenantName,
     tenantImageUrl,
     reviewRating,
     reviewCount,
@@ -42,7 +44,7 @@ export const ProductCard = ({
                             width={16}
                             height={16}
                             className="rounded-full border shrink-0 size-[16px]"/>
-                    <p className="text-sm underline font-medium">{tenantSlug}</p>
+                    <p className="text-sm underline font-medium">{tenantName}</p>
                 </div>
                 {reviewCount > 0 && (
                     <div className="flex items-center gap-1">
