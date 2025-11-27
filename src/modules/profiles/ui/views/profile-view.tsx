@@ -49,10 +49,6 @@ export function ProfileView() {
 		<div className="flex flex-col gap-8 p-4 lg:p-10 max-w-[1400px] mx-auto">
 			<header className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
 				<div className="flex items-center gap-4">
-					<Avatar className="size-20 border">
-						<AvatarImage src={"/tenant-avatar.png"} />
-						<AvatarFallback>{tenantName.charAt(0).toUpperCase()}</AvatarFallback>
-					</Avatar>
 					<div>
 						<h1 className={cn("text-4xl font-semibold", poppins.className)}>{tenantName}</h1>
 						<p className="text-muted-foreground">Manage your store, products, media & orders</p>

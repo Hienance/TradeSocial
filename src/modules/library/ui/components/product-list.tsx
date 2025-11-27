@@ -40,6 +40,7 @@ export const ProductList = () => {
                     name={product.name}
                     imageUrl={product.image?.url}
                     tenantSlug= {product.tenant.slug}
+                    tenantName={product.tenant.name}
                     tenantImageUrl={product.tenant?.image?.url}
                     reviewRating={product.reviewRating}
                     reviewCount={product.reviewCount}/>
