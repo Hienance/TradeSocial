@@ -31,7 +31,12 @@ interface ProductViewProps {
 
 export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
     const trpc = useTRPC();
-    const { data } = useSuspenseQuery(trpc.products.getOne.queryOptions({id: productId}))
+    const [reviewsPage, setReviewsPage] = useState(1);
+    const { data } = useSuspenseQuery(trpc.products.getOne.queryOptions({
+        id: productId,
+        reviewsPage,
+        reviewsLimit: 3,
+    }))
 
     const [isCopied, setIsCopied] = useState(false);
 
@@ -41,7 +46,7 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
             <div className="border rounded-sm bg-white overflow-hidden">
                 <div className="relative aspect-[3.9] border-b">
                     <Image  
-                        src={data.cover?.url || "/placeholder.png"}
+                        src={data.cover?.url || "/placeholder-cover.webp"}
                         alt={data.name}
                         fill
                         className="object-cover"
@@ -61,14 +66,12 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
 
                             <div className="px-6 py-4 flex items-center justify-center lg:border-r">
                                 <Link href={generateTenantURL(tenantSlug)} className="flex items-center gap-2">
-                                    {data.tenant.image?.url && (
                                         <Image
-                                            src={data.tenant.image.url}
+                                            src={data.tenant.image?.url || "/Default_pfp.jpg"}
                                             alt={data.tenant.name}
                                             width={20}
                                             height={20}
                                             className="rounded-full border shrink-0 size-[20px]"/>
-                                    )}
                                     <p className="text-base underline font-medium">
                                         {data.tenant.name}
                                     </p>
@@ -170,6 +173,65 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="border rounded-sm bg-white overflow-hidden mt-6">
+                <div className="p-6 border-b">
+                    <h2 className="text-2xl font-medium">Customer Reviews</h2>
+                </div>
+                {data.reviews.docs.length > 0 ? (
+                    <>
+                        <div className="divide-y">
+                            {data.reviews.docs.map((review) => {
+                                const user = typeof review.user === 'object' ? review.user : null;
+                                return (
+                                    <div key={review.id} className="p-6">
+                                        <div className="flex items-start gap-4">
+                                            <Image
+                                                src="/Default_pfp.jpg"
+                                                alt={user?.username || "User"}
+                                                width={48}
+                                                height={48}
+                                                className="rounded-full border shrink-0 size-[48px]"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div>
+                                                        <p className="font-medium text-base">
+                                                            {user?.username || "User"}
+                                                        </p>
+                                                    </div>
+                                                    <StarRating rating={review.rating} iconClassName="size-4" />
+                                                </div>
+                                                <p className="text-base mt-2">
+                                                    {review.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {data.reviews.hasNextPage && (
+                            <div className="p-6 border-t">
+                                <Button
+                                    variant="elevated"
+                                    className="w-full"
+                                    onClick={() => setReviewsPage((prev) => prev + 1)}
+                                >
+                                    Load More Reviews
+                                </Button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="p-6">
+                        <p className="text-center text-muted-foreground italic">
+                            No reviews yet. Be the first to review this product!
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     )

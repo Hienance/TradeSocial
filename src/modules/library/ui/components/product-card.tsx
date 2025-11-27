@@ -36,14 +36,12 @@ export const ProductCard = ({
             <div className="p-4 border-y flex flex-col gap-3 flex-1">
                 <h2 className="text-lg font-medium line-clamp-4">{name}</h2>
                 <div className="flex items-center gap-2">
-                    {tenantImageUrl &&  (
                         <Image 
                             alt={tenantSlug}
-                            src={tenantImageUrl}
+                            src={tenantImageUrl || "/Default_pfp.jpg"}
                             width={16}
                             height={16}
                             className="rounded-full border shrink-0 size-[16px]"/>
-                    )}
                     <p className="text-sm underline font-medium">{tenantSlug}</p>
                 </div>
                 {reviewCount > 0 && (

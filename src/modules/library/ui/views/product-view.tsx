@@ -41,7 +41,7 @@ export const ProductView = ({productId}:Props) => {
         <section className="bordermax-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
             <div className="relative aspect-[3.9] border rounded-t overflow-hidden">
                 <Image  
-                    src={data.cover?.url || "/placeholder.png"}
+                    src={data.cover?.url || "/placeholder-cover.webp"}
                     alt={data.name}
                     fill
                     className="object-cover"

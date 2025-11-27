@@ -14,6 +14,8 @@ export const productsRouter = createTRPCRouter({
         .input(
             z.object({
                 id: z.string(),
+                reviewsPage: z.number().default(1).optional(),
+                reviewsLimit: z.number().default(3).optional(),
             })
         )
         .query(async  ({ctx, input}) => {
@@ -61,7 +63,8 @@ export const productsRouter = createTRPCRouter({
                 isPurchased = !!ordersData.docs[0];
             }
 
-            const reviews = await ctx.db.find({
+            // Fetch all reviews for rating calculations
+            const allReviews = await ctx.db.find({
                 collection: "reviews",
                 pagination: false,
                 where: {
@@ -71,7 +74,7 @@ export const productsRouter = createTRPCRouter({
                 },
             });
 
-            const reviewRating = reviews.docs.length > 0 ? Math.round((reviews.docs.reduce((acc, review) => acc + review.rating, 0) / reviews.totalDocs)*100)/100 : 0;
+            const reviewRating = allReviews.docs.length > 0 ? Math.round((allReviews.docs.reduce((acc, review) => acc + review.rating, 0) / allReviews.totalDocs)*100)/100 : 0;
 
             const ratingDistribution: Record<number,number> = {
                 5:0,
@@ -81,8 +84,8 @@ export const productsRouter = createTRPCRouter({
                 1:0,
             };
 
-            if (reviews.totalDocs > 0) {
-                reviews.docs.forEach((review) => {
+            if (allReviews.totalDocs > 0) {
+                allReviews.docs.forEach((review) => {
                     const rating = review.rating;
 
                     if (rating >= 1 && rating <= 5) {
@@ -94,10 +97,24 @@ export const productsRouter = createTRPCRouter({
                     const rating =  Number(key);
                     const count = ratingDistribution[rating] || 0;
                     ratingDistribution[rating] = Math.round(
-                        (count / reviews.totalDocs) * 100, 
+                        (count / allReviews.totalDocs) * 100, 
                     );
                 });
             }
+
+            // Fetch paginated reviews with user data
+            const paginatedReviews = await ctx.db.find({
+                collection: "reviews",
+                depth: 2,
+                page: input.reviewsPage || 1,
+                limit: input.reviewsLimit || 3,
+                where: {
+                    product: {
+                        equals: input.id,
+                    },
+                },
+                sort: "-createdAt",
+            });
             
 
             return {
@@ -107,8 +124,15 @@ export const productsRouter = createTRPCRouter({
                 cover: product.cover as Media | null,
                 tenant: product.tenant as Tenant & {image: Media | null},
                 reviewRating,
-                reviewCount : reviews.totalDocs,
+                reviewCount : allReviews.totalDocs,
                 ratingDistribution,
+                reviews: {
+                    docs: paginatedReviews.docs,
+                    totalDocs: paginatedReviews.totalDocs,
+                    totalPages: paginatedReviews.totalPages,
+                    page: paginatedReviews.page,
+                    hasNextPage: paginatedReviews.hasNextPage,
+                },
             }
         }), 
 

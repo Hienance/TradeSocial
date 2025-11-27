@@ -10,6 +10,7 @@ interface ProductCardProp {
     name: string;
     imageUrl?: string | null;
     tenantSlug: string;
+    tenantName: string;
     tenantImageUrl?: string | null;
     reviewRating: number;
     reviewCount: number;
@@ -21,6 +22,7 @@ export const ProductCard = ({
     name,
     imageUrl,
     tenantSlug,
+    tenantName, 
     tenantImageUrl,
     reviewRating,
     reviewCount,
@@ -32,9 +34,7 @@ export const ProductCard = ({
         e.preventDefault();
         e.stopPropagation();
         router.push(generateTenantURL(tenantSlug));
-    }
-
-    
+    }    
 
     return (
     <Link href={`${generateTenantURL(tenantSlug)}/products/${id}`}>
@@ -49,15 +49,13 @@ export const ProductCard = ({
             <div className="p-4 border-y flex flex-col gap-3 flex-1">
                 <h2 className="text-lg font-medium line-clamp-4">{name}</h2>
                 <div className="flex items-center gap-2" onClick={handleUserClick}>
-                    {tenantImageUrl &&  (
                         <Image 
                             alt={tenantSlug}
-                            src={tenantImageUrl}
+                            src={tenantImageUrl || "/Default_pfp.jpg"}
                             width={16}
                             height={16}
                             className="rounded-full border shrink-0 size-[16px]"/>
-                    )}
-                    <p className="text-sm underline font-medium">{tenantSlug}</p>
+                    <p className="text-sm underline font-medium">{tenantName}</p>
                 </div>
                 {reviewCount > 0 && (
                     <div className="flex items-center gap-1">
