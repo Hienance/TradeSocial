@@ -13,6 +13,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Product } from "@/payload-types";
+import { refundPolicy } from "@/modules/profiles/types";
 
 interface EditProductDialogProps {
     product: Product;
@@ -114,7 +115,7 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
             price: priceNum,
             category: category,
             tags: selectedTags.length > 0 ? selectedTags : undefined,
-            refundPolicy: refundPolicy as any,
+            refundPolicy: refundPolicy as refundPolicy,
             content: content.trim() || undefined,
             isPrivate,
         });

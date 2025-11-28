@@ -3,12 +3,11 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { Tenant } from "@/payload-types";
 
-// Input schemas
 const createProductSchema = z.object({
     name: z.string().min(1, "Product name is required"),
     description: z.any().optional(),
     price: z.number().min(0, "Price must be positive"),
-    category: z.string().optional(),
+    category: z.string().min(1, "Category is required"),
     tags: z.array(z.string()).optional(),
     image: z.string().optional(),
     cover: z.string().optional(),

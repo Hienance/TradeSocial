@@ -94,7 +94,7 @@ export const Categories = ({data}: Props) => {
                 variant="elevated"
                 className={cn(
                     "h-11 px-4 bg-transparent border-transparent rounded-full hover:bg-white hover:border-primary text-black", 
-                    isActiveCategoryHidden && !isAnyHovered && "bg-white border-primary",
+                    isActiveCategoryHidden && !isAnyHovered && "bg-white border-primary", activeCategory === "all" && "bg-white border-primary",
                 )}>
                     <Link href="/">
                     All
@@ -111,7 +111,7 @@ export const Categories = ({data}: Props) => {
                 </div>
             ))}
 
-            <div ref={viewAllRef} className=" shrink-0" >
+            <div ref={viewAllRef} className="shrink-0" >
                 <Button
                 variant="elevated"
                 className={cn(

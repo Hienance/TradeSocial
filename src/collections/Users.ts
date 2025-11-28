@@ -44,6 +44,29 @@ export const Users: CollectionConfig = {
       type: "text",
     },
     {
+      name: "otpCode",
+      label: "One-Time Passcode",
+      type: "text",
+      admin: {
+        position: "sidebar",
+        description: "Temporary OTP for login verification.",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      },
+    },
+    {
+      name: "otpExpiresAt",
+      label: "OTP Expires At",
+      type: "date",
+      admin: {
+        position: "sidebar",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      },
+    },
+    {
       name: "googleId",
       label: "Google Account ID",
       type: "text",

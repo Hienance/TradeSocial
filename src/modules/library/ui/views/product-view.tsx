@@ -60,14 +60,12 @@ export const ProductView = ({productId}:Props) => {
                         </div>
                         <div className="px-6 py-4 flex items-center justify-center lg:border-r">
                             <Link href={generateTenantURL(data.tenant.slug)} className="flex items-center gap-2">
-                                {data.tenant.image?.url && (
                                     <Image
-                                        src={data.tenant.image.url}
+                                        src={data.tenant.image?.url || "/Default_pfp.jpg"}
                                         alt={data.tenant.name}
                                         width={20}
                                         height={20}
                                         className="rounded-full border shrink-0 size-[20px]"/>
-                                    )}
                                 <p className="text-base underline font-medium">
                                 {data.tenant.name}
                             </p>
@@ -166,7 +164,7 @@ export const ProductViewSkeleton = () => {
             <section className="bordermax-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
                 <div className="relative aspect-[3.9] border rounded-t overflow-hidden">
                     <Image  
-                        src={"/placeholder.png"}
+                        src={"/placeholder-cover.webp"}
                         alt="placeholder"
                         fill
                         className="object-cover"
