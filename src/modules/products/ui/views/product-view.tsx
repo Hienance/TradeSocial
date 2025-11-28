@@ -243,7 +243,7 @@ export const ProductViewSkeleton = () => {
             <div className="border rounded-sm bg-white overflow-hidden">
                 <div className="relative aspect-[3.9] border-b">
                     <Image  
-                        src={"/placeholder.png"}
+                        src={"/placeholder-cover.webp"}
                         alt="placeholder"
                         fill
                         className="object-cover"

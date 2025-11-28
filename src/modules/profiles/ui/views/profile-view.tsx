@@ -11,9 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn, formatCurrency, generateTenantURL } from "@/lib/utils";
-import { Plus, Settings, Package, Image as LayoutDashboard, Save, ShieldCheck, AlertCircle } from "lucide-react";
+import { Settings, Package, Image as LayoutDashboard, Save, ShieldCheck, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -213,7 +212,7 @@ export function ProfileView() {
 					</Card>
 				</TabsContent>
 
-				{/* Products */}
+				{/* Products TODO: ADD SIMPLE SEARCH FILTER FOR PRODUDCTS*/}
 				<TabsContent value="products" className="space-y-6">
 					<div className="flex justify-between items-center">
 						<h2 className={cn("text-2xl font-semibold", poppins.className)}>Products</h2>

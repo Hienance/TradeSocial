@@ -13,6 +13,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { refundPolicy } from "@/modules/profiles/types";
 
 interface CreateProductDialogProps {
     disabled?: boolean;
@@ -96,7 +97,7 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
             price: priceNum,
             category: category,
             tags: selectedTags.length > 0 ? selectedTags : undefined,
-            refundPolicy: refundPolicy as any,
+            refundPolicy: refundPolicy as refundPolicy,
             content: content.trim() || undefined,
             isPrivate,
         });

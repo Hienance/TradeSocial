@@ -139,6 +139,11 @@ export interface User {
   id: string;
   username: string;
   /**
+   * Temporary OTP for login verification.
+   */
+  otpCode?: string | null;
+  otpExpiresAt?: string | null;
+  /**
    * Linked Google account identifier (sub).
    */
   googleId?: string | null;
@@ -455,6 +460,8 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  otpCode?: T;
+  otpExpiresAt?: T;
   googleId?: T;
   googleEmail?: T;
   mfaGoogleEnabled?: T;

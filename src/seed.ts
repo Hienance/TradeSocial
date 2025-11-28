@@ -218,42 +218,259 @@ const categories = [
 ];
 
 const seed = async () => {
-    const payload = await getPayload ({config});
+  const payload = await getPayload({ config });
 
-    // Create a super admin user
-    await payload.create({
-      collection: "users",
-      data: {
-        email: "admin@demo.com",
-        password: "demo",
-        roles: ["super-admin"],
-        username: "admin",
-      }
-    })
+  const log = (...args: any[]) => console.log("[seed]", ...args);
 
-    for (const category of categories) {
-        const parentCategory = await payload.create({
-            collection: "categories",
-            data: {
-                name: category.name,
-                slug: category.slug,
-                color: category.color,
-                parent: null,
-            },
-        });
+  // Always bypass access checks for seeding
+  const opts = { overrideAccess: true } as const;
 
-        for (const subCategory of category.subcategories || []) {
-            await payload.create({
-                collection: "categories",
-                data: {
-                    name: subCategory.name,
-                    slug: subCategory.slug,
-                    parent: parentCategory.id,
-                },
-            });
+  const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+  const isTransientWriteError = (e: any) => {
+    const code = e?.code;
+    const name = e?.codeName;
+    const labels: string[] = e?.errorResponse?.errorLabels || e?.errorLabels || [];
+    return code === 112 || name === "WriteConflict" || labels.includes("TransientTransactionError");
+  };
+
+  const createWithRetry = async <T = any>(
+    collection: string,
+    data: any,
+    unique?: { field: string; value: any },
+    maxRetries = 5
+  ): Promise<T> => {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        if (unique) {
+          const existing = await payload.find({
+            collection: collection as any,
+            where: { [unique.field]: { equals: unique.value } },
+            limit: 1,
+            ...opts,
+          });
+          if (existing.docs && existing.docs.length > 0) {
+            return existing.docs[0] as T;
+          }
         }
+        const created = await payload.create({ collection: collection as any, data, ...opts });
+        return created as T;
+      } catch (e: any) {
+        if (isTransientWriteError(e) && attempt < maxRetries - 1) {
+          await sleep(50 * Math.pow(2, attempt));
+          continue;
+        }
+        throw e;
+      }
     }
-}
+    throw new Error(`Failed to create in ${collection} after ${maxRetries} attempts`);
+  };
+
+  // 1) Super admin
+  log("creating super admin user...");
+  const superAdmin = await createWithRetry("users", {
+    email: "admin@demo.com",
+    password: "demo",
+    roles: ["super-admin"],
+    username: "admin",
+  }, { field: "email", value: "admin@demo.com" });
+
+  // 2) Tenants
+  log("creating tenants...");
+  const tenantInputs = [
+    {
+      name: "Alpha Store",
+      slug: "alpha-store",
+      description: "Electronics and lifestyle goods",
+      stripeAccountId: "acct_alpha_123",
+      stripeDetailsSubmitted: true,
+    },
+    {
+      name: "Beta Bazaar",
+      slug: "beta-bazaar",
+      description: "Home, kitchen and fashion essentials",
+      stripeAccountId: "acct_beta_123",
+      stripeDetailsSubmitted: true,
+    },
+    {
+      name: "Gamma Goods",
+      slug: "gamma-goods",
+      description: "Sports, outdoors and more",
+      stripeAccountId: "acct_gamma_123",
+      stripeDetailsSubmitted: true,
+    },
+  ];
+
+  const tenants: Array<{ id: string; slug: string; name: string }> = [];
+  for (const t of tenantInputs) {
+    const created = await createWithRetry("tenants", t, { field: "slug", value: t.slug });
+    tenants.push({ id: created.id, slug: created.slug, name: created.name });
+  }
+
+  // 3) Owners and customers
+  log("creating store owners and customers...");
+  const ownerInputs: Array<{
+    email: string;
+    username: string;
+    password: string;
+    tenants: Array<{ tenant: string }>;
+    roles: ("user" | "super-admin")[];
+  }> = [
+    {
+      email: "owner1@demo.com",
+      username: "owner1",
+      password: "demo",
+      tenants: [{ tenant: tenants[0]!.id }],
+      roles: ["user"],
+    },
+    {
+      email: "owner2@demo.com",
+      username: "owner2",
+      password: "demo",
+      tenants: [{ tenant: tenants[1]!.id }],
+      roles: ["user"],
+    },
+    {
+      email: "owner3@demo.com",
+      username: "owner3",
+      password: "demo",
+      tenants: [{ tenant: tenants[2]!.id }],
+      roles: ["user"],
+    },
+  ];
+  const owners = [] as Array<{ id: string; email: string }>;
+  for (const u of ownerInputs) {
+    const created = await createWithRetry("users", u, { field: "email", value: u.email });
+    owners.push({ id: created.id, email: created.email });
+  }
+
+  const customerInputs: Array<{
+    email: string;
+    username: string;
+    password: string;
+    roles: ("user" | "super-admin")[];
+  }> = [
+    { email: "jane@demo.com", username: "jane", password: "demo", roles: ["user"] },
+    { email: "john@demo.com", username: "john", password: "demo", roles: ["user"] },
+    { email: "mike@demo.com", username: "mike", password: "demo", roles: ["user"] },
+    { email: "sara@demo.com", username: "sara", password: "demo", roles: ["user"] },
+  ];
+  const customers = [] as Array<{ id: string; email: string; username: string }>;
+  for (const u of customerInputs) {
+    const created = await createWithRetry("users", u, { field: "email", value: u.email });
+    customers.push({ id: created.id, email: created.email, username: u.username });
+  }
+
+  // 4) Tags
+  log("creating tags...");
+  const tagNames = [
+    "New",
+    "Popular",
+    "Sale",
+    "Limited",
+    "Eco-friendly",
+    "Premium",
+    "Budget",
+    "Trending",
+  ];
+  const tagIds: string[] = [];
+  for (const name of tagNames) {
+    const created = await createWithRetry("tags", { name }, { field: "name", value: name });
+    tagIds.push(created.id);
+  }
+
+  // 5) Categories and subcategories (as provided)
+  log("creating categories and subcategories...");
+  const categoryBySlug = new Map<string, { id: string; name: string }>();
+  const allSubcategories: Array<{ id: string; name: string; slug: string; parentId: string; parentName: string }> = [];
+  for (const category of categories) {
+    const parentCategory = await createWithRetry("categories", {
+      name: category.name,
+      slug: category.slug,
+      color: category.color,
+      parent: null,
+    }, { field: "slug", value: category.slug });
+    categoryBySlug.set(category.slug, { id: parentCategory.id, name: parentCategory.name });
+
+    for (const subCategory of category.subcategories || []) {
+      const createdSub = await createWithRetry("categories", {
+        name: subCategory.name,
+        slug: subCategory.slug,
+        parent: parentCategory.id,
+      }, { field: "slug", value: subCategory.slug });
+      allSubcategories.push({
+        id: createdSub.id,
+        name: createdSub.name,
+        slug: createdSub.slug,
+        parentId: parentCategory.id,
+        parentName: parentCategory.name,
+      });
+    }
+  }
+
+  // Helpers
+  const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const sample = <T,>(arr: T[], n: number) => arr.slice().sort(() => 0.5 - Math.random()).slice(0, n);
+
+  // 6) Products (2-3 per subcategory) and reviews
+  log("creating products and reviews per subcategory...");
+  const createdProducts: Array<{ id: string; name: string }> = [];
+  let subcategoryIndex = 0;
+  for (const sub of allSubcategories) {
+    const count = 2 + randInt(0, 1); // 2 or 3 per subcategory
+    for (let i = 0; i < count; i++) {
+      const tenant = tenants[subcategoryIndex % tenants.length]!;
+      const chosenTags = sample(tagIds, 2 + randInt(0, 1));
+      const price = Number((Math.random() * 400 + 9.99).toFixed(2));
+      const productName = `${sub.parentName} / ${sub.name} Product ${i + 1}`;
+
+      const product = await payload.create({
+        collection: "products",
+        data: {
+          tenant: tenant.id,
+          name: productName,
+          price,
+          category: sub.id,
+          tags: chosenTags,
+          refundPolicy: "30-day",
+          isArchived: false,
+          isPrivate: false,
+        },
+        ...opts,
+      });
+      createdProducts.push({ id: product.id, name: product.name });
+
+      // 2-3 reviews per product
+      const reviewsCount = 2 + randInt(0, 1);
+      const reviewers = sample(customers, reviewsCount);
+      for (let r = 0; r < reviewsCount; r++) {
+        const reviewer = reviewers[r]!;
+        const rating = randInt(4, 5);
+        const phrases = [
+          "Great quality and value!",
+          "Exceeded expectations.",
+          "Would buy again.",
+          "Solid product, fast shipping.",
+          "Highly recommend!",
+        ];
+        const description = `${phrases[randInt(0, phrases.length - 1)]} (${productName})`;
+
+        await payload.create({
+          collection: "reviews",
+          data: {
+            description,
+            rating,
+            product: product.id,
+            user: reviewer.id,
+          },
+          ...opts,
+        });
+      }
+    }
+    subcategoryIndex++;
+  }
+
+  log(`created ${tenants.length} tenants, ${owners.length} owners, ${customers.length} customers, ${tagIds.length} tags, ${createdProducts.length} products with reviews across ${allSubcategories.length} subcategories.`);
+};
 
 try {
     await seed();
