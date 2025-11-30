@@ -139,6 +139,15 @@ export interface User {
   id: string;
   username: string;
   /**
+   * Whether user has activated TOTP MFA.
+   */
+  totpEnabled?: boolean | null;
+  /**
+   * Internal storage of user's TOTP secret (base32). Hidden.
+   */
+  totpSecret?: string | null;
+  totpVerifiedAt?: string | null;
+  /**
    * Temporary OTP for login verification.
    */
   otpCode?: string | null;
@@ -460,6 +469,9 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  totpEnabled?: T;
+  totpSecret?: T;
+  totpVerifiedAt?: T;
   otpCode?: T;
   otpExpiresAt?: T;
   googleId?: T;

@@ -56,13 +56,20 @@ export const protectedProcedure = baseProcedure.use(async({ctx, next}) => {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Must be logged in' });
   }
 
-  // MFA check: if Google MFA enabled ensure recent verification timestamp exists (within 12h)
+  const twelveHoursMs = 12 * 60 * 60 * 1000;
+  const now = Date.now();
+  // Google MFA time check
   if (user.mfaGoogleEnabled) {
-    const verifiedAt = user.mfaGoogleVerifiedAt ? new Date(user.mfaGoogleVerifiedAt) : null;
-    const twelveHoursMs = 12 * 60 * 60 * 1000;
-    const now = Date.now();
-    if (!verifiedAt || now - verifiedAt.getTime() > twelveHoursMs) {
+    const gVerifiedAt = user.mfaGoogleVerifiedAt ? new Date(user.mfaGoogleVerifiedAt) : null;
+    if (!gVerifiedAt || now - gVerifiedAt.getTime() > twelveHoursMs) {
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'MFA Google verification required' });
+    }
+  }
+  // TOTP MFA time check
+  if (user.totpEnabled) {
+    const tVerifiedAt = user.totpVerifiedAt ? new Date(user.totpVerifiedAt) : null;
+    if (!tVerifiedAt || now - tVerifiedAt.getTime() > twelveHoursMs) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'MFA TOTP verification required' });
     }
   }
 

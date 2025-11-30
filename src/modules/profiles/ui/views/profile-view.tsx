@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateProductDialog } from "../components/create-product-dialog";
 import { EditProductDialog } from "../components/edit-product-dialog";
+import { TotpSetup } from "@/modules/auth/ui/components/totp-setup";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
@@ -383,6 +384,18 @@ export function ProfileView() {
 								<Save className="h-4 w-4"/>
 								{isSaving ? 'Saving...' : 'Save Changes'}
 							</Button>
+						</CardContent>
+					</Card>
+
+					{/* Security / MFA Card */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Security</CardTitle>
+							<CardDescription>Manage multi-factor authentication (TOTP)</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<p className="text-sm text-muted-foreground mb-4">Enhance account security by enabling Time-based One-Time Password (TOTP) authentication. Use an authenticator app like Google Authenticator, Authy, or 1Password.</p>
+							<TotpSetup />
 						</CardContent>
 					</Card>
 				</TabsContent>

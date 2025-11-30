@@ -43,6 +43,29 @@ export const Users: CollectionConfig = {
       unique: true,
       type: "text",
     },
+    // TOTP MFA fields
+    {
+      name: 'totpEnabled',
+      label: 'TOTP Enabled',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { position: 'sidebar', description: 'Whether user has activated TOTP MFA.' },
+      access: { update: ({ req }) => isSuperAdmin(req.user) || !!req.user },
+    },
+    {
+      name: 'totpSecret',
+      label: 'TOTP Secret',
+      type: 'text',
+      admin: { position: 'sidebar', description: 'Internal storage of user\'s TOTP secret (base32). Hidden.' },
+      access: { update: ({ req }) => isSuperAdmin(req.user) || !!req.user },
+    },
+    {
+      name: 'totpVerifiedAt',
+      label: 'Last TOTP Verification',
+      type: 'date',
+      admin: { position: 'sidebar' },
+      access: { update: ({ req }) => isSuperAdmin(req.user) || !!req.user },
+    },
     {
       name: "otpCode",
       label: "One-Time Passcode",

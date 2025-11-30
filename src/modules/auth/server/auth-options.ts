@@ -13,6 +13,27 @@ function deriveUsername(base: string): string {
   return trimmed.length ? trimmed : `user-${Date.now()}`;
 }
 
+// Ensure uniqueness against existing users; fall back to Google sub for determinism
+async function ensureUniqueUsername(payload: any, base: string, googleSub: string): Promise<string> {
+  const attempt = deriveUsername(base).slice(0, 63);
+  const existing = await payload.find({
+    collection: 'users',
+    limit: 1,
+    where: { username: { equals: attempt } },
+  });
+  if (!existing.docs.length) return attempt;
+  // Use short sub segment to avoid collisions while keeping readable
+  const alt = `${attempt}-${googleSub.slice(0, 6)}`.slice(0, 63);
+  const existingAlt = await payload.find({
+    collection: 'users',
+    limit: 1,
+    where: { username: { equals: alt } },
+  });
+  if (!existingAlt.docs.length) return alt;
+  // Final fallback uses full sub (still truncated to field length)
+  return `${attempt}-${googleSub}`.slice(0, 63);
+}
+
 export const authOptions: AuthOptions = {
   providers: [
     (() => {
@@ -26,6 +47,13 @@ export const authOptions: AuthOptions = {
         clientId: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
         allowDangerousEmailAccountLinking: true,
+        // Force a fresh Google auth every time to increase chance of 2SV prompt
+        authorization: {
+          params: {
+            prompt: 'login', // Ask user to re-enter credentials
+            max_age: 0,      // Require re-auth even if recent session exists
+          },
+        },
       });
     })(),
   ],
@@ -90,7 +118,7 @@ export const authOptions: AuthOptions = {
           const usernameSource = (profile.name && typeof profile.name === 'string'
             ? profile.name
             : profile.email.split('@')[0]) as string;
-          const username = deriveUsername(usernameSource).slice(0, 63);
+          const username = await ensureUniqueUsername(payload, usernameSource, (profile as any).sub);
           // Create tenant first so we can attach during user creation
           const account = await stripe.accounts.create({});
           const slug = await ensureUniqueTenantSlug(username);
