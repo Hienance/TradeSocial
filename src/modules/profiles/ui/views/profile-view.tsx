@@ -19,6 +19,8 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { signIn } from "next-auth/react";
 import { CreateProductDialog } from "../components/create-product-dialog";
 import { EditProductDialog } from "../components/edit-product-dialog";
 
@@ -26,6 +28,11 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
 export function ProfileView() {
 	const trpc = useTRPC();
+
+	// Auth user (for Google MFA visibility)
+	const { data: me, refetch: refetchMe } = useSuspenseQuery(
+		trpc.auth.me.queryOptions()
+	);
 	
 	// Fetch tenant data
 	const { data: tenant, refetch: refetchTenant } = useSuspenseQuery(
@@ -95,6 +102,32 @@ export function ProfileView() {
 		})
 	);
 
+	// Toggle Google MFA mutation
+	const { mutate: toggleMfa, isPending: isTogglingMfa } = useMutation(
+		trpc.auth.toggleGoogleMfa.mutationOptions({
+			onSuccess: () => {
+				toast.success("Security preference updated");
+				refetchMe();
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to update security setting");
+			},
+		})
+	);
+
+	// Toggle Email OTP requirement
+	const { mutate: toggleEmailOtp, isPending: isTogglingEmailOtp } = useMutation(
+		trpc.auth.toggleEmailOtp.mutationOptions({
+			onSuccess: () => {
+				toast.success("Security preference updated");
+				refetchMe();
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to update security setting");
+			},
+		})
+	);
+
 	const handleSaveSettings = () => {
 		updateTenant({
 			name: tenantName,
@@ -107,6 +140,12 @@ export function ProfileView() {
 	};
 
 	const activeProducts = products.docs.filter(p => !p.isArchived);
+
+	const formatLastVerified = (iso?: string | null) => {
+		if (!iso) return "Never";
+		const d = new Date(iso);
+		return d.toLocaleString();
+	};
 
 	return (
 		<div className="flex flex-col gap-8 p-4 lg:p-10 max-w-[1400px] mx-auto">
@@ -298,6 +337,70 @@ export function ProfileView() {
 				{/* Settings */}
 				<TabsContent value="settings" className="space-y-6">
 					<h2 className={cn("text-2xl font-semibold", poppins.className)}>Store Settings</h2>
+
+					{/* Security (Google MFA) */}
+					{(me.googleId || me.googleEmail) && (
+						<Card>
+							<CardHeader>
+								<CardTitle>Security</CardTitle>
+								<CardDescription>Protect your account with Google multi-factor authentication</CardDescription>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<p className="text-sm text-muted-foreground">
+									When enabled, you must re-confirm your Google account every 12 hours before sensitive actions. This helps prevent unauthorized use if someone steals your session.
+								</p>
+								<div className="flex items-center justify-between">
+									<div className="space-y-1">
+										<p className="text-sm font-medium">Google MFA</p>
+										<p className="text-xs text-muted-foreground">
+											{me.mfaGoogleEnabled
+												? `Enabled • Last verification: ${formatLastVerified(me.mfaGoogleVerifiedAt)}`
+												: "Disabled • Enable to require periodic Google re-auth"}
+										</p>
+									</div>
+									<Switch
+										checked={!!me.mfaGoogleEnabled}
+										disabled={isTogglingMfa}
+										onCheckedChange={(checked) => {
+											if (checked) {
+												// Begin Google re-auth flow; finalize page will enable MFA.
+												signIn("google", { callbackUrl: "/mfa/google-enable" });
+											} else {
+												// Disable directly via toggle procedure.
+												toggleMfa({ enabled: false });
+											}
+										}}
+									/>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
+					{/* Security (Email OTP) */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Email Verification</CardTitle>
+							<CardDescription>Require a one-time code sent to your email before logging in</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<p className="text-sm text-muted-foreground">
+								When enabled, the login button is disabled until you enter the code we email to you. This helps prevent unauthorized logins if someone guesses or steals your password.
+							</p>
+							<div className="flex items-center justify-between">
+								<div className="space-y-1">
+									<p className="text-sm font-medium">Email OTP Required</p>
+									<p className="text-xs text-muted-foreground">
+										{me.emailOtpEnabled ? "Enabled • A code will be required at login" : "Disabled • You can log in without a code"}
+									</p>
+								</div>
+								<Switch
+									checked={!!me.emailOtpEnabled}
+									disabled={isTogglingEmailOtp}
+									onCheckedChange={(checked) => toggleEmailOtp({ enabled: !!checked })}
+								/>
+							</div>
+						</CardContent>
+					</Card>
 					
 					{/* Stripe Verification Card */}
 					<Card>

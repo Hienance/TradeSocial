@@ -66,12 +66,17 @@ export const protectedProcedure = baseProcedure.use(async({ctx, next}) => {
     }
   }
 
+  // Extract bearer token since AuthResult type does not expose token.
+  // Supports 'Authorization: Bearer <token>' or lowercase variant.
+  const authHeader = headers.get('authorization') || headers.get('Authorization');
+  const payloadToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+
   return next({
     ctx: {
       ...ctx,
       session: {
         user,
-        payloadToken: payloadSession?.token,
+        payloadToken,
       },
     },
   });

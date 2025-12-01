@@ -152,6 +152,10 @@ export interface User {
    */
   googleEmail?: string | null;
   /**
+   * Require a verification code sent to your email before login.
+   */
+  emailOtpEnabled?: boolean | null;
+  /**
    * Require Google re-auth as second factor.
    */
   mfaGoogleEnabled?: boolean | null;
@@ -464,6 +468,7 @@ export interface UsersSelect<T extends boolean = true> {
   otpExpiresAt?: T;
   googleId?: T;
   googleEmail?: T;
+  emailOtpEnabled?: T;
   mfaGoogleEnabled?: T;
   mfaGoogleVerifiedAt?: T;
   roles?: T;

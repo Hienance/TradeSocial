@@ -1,9 +1,10 @@
-import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import { baseProcedure, createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { headers as getHeaders} from "next/headers";
 import { loginSchema, registerSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
+import z from "zod";
 
 export const authRouter = createTRPCRouter({
     session: baseProcedure.query(async({ctx}) => {
@@ -12,6 +13,77 @@ export const authRouter = createTRPCRouter({
         const session = await ctx.db.auth({headers});
 
         return session;
+    }),
+
+    // Current authenticated user (sanitized)
+    me: protectedProcedure.query(async ({ ctx }) => {
+        const user = ctx.session.user;
+        if (!user) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "No user in session" });
+        }
+        return {
+            id: user.id,
+            email: user.email,
+            googleEmail: user.googleEmail,
+            googleId: user.googleId,
+            emailOtpEnabled: user.emailOtpEnabled,
+            mfaGoogleEnabled: user.mfaGoogleEnabled,
+            mfaGoogleVerifiedAt: user.mfaGoogleVerifiedAt,
+        };
+    }),
+
+    // Toggle Google-based MFA. When enabling, stamp verification time (assuming current Google auth is valid)
+    toggleGoogleMfa: protectedProcedure
+        .input(z.object({ enabled: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+            const user = ctx.session.user;
+            if (!user) {
+                throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+            }
+            if (!user.googleId && !user.googleEmail) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "Google account not linked" });
+            }
+            // Only allow disabling via this endpoint; enabling must go through finalize flow after OAuth re-auth.
+            if (input.enabled) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "Use finalizeGoogleMfaEnable after Google re-auth to enable MFA" });
+            }
+
+            const updated = await ctx.db.update({
+                collection: "users",
+                id: user.id,
+                data: {
+                    mfaGoogleEnabled: false,
+                    mfaGoogleVerifiedAt: null,
+                },
+            });
+
+            return {
+                mfaGoogleEnabled: updated.mfaGoogleEnabled,
+                mfaGoogleVerifiedAt: updated.mfaGoogleVerifiedAt,
+            };
+        }),
+
+    // Finalize enabling Google MFA after OAuth callback
+    finalizeGoogleMfaEnable: protectedProcedure.mutation(async ({ ctx }) => {
+        const user = ctx.session.user;
+        if (!user) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+        }
+        if (!user.googleId && !user.googleEmail) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Google account not linked" });
+        }
+        const updated = await ctx.db.update({
+            collection: "users",
+            id: user.id,
+            data: {
+                mfaGoogleEnabled: true,
+                mfaGoogleVerifiedAt: new Date().toISOString(),
+            },
+        });
+        return {
+            mfaGoogleEnabled: updated.mfaGoogleEnabled,
+            mfaGoogleVerifiedAt: updated.mfaGoogleVerifiedAt,
+        };
     }),
 
     register: baseProcedure
@@ -119,5 +191,94 @@ export const authRouter = createTRPCRouter({
             return true;
         }),
 
-    
+    // Request OTP code: generate and email to user
+    requestOtp: baseProcedure
+        .input(z.object({ email: z.string().email() }))
+        .mutation(async ({ ctx, input }) => {
+            const found = await ctx.db.find({
+                collection: "users",
+                limit: 1,
+                where: { email: { equals: input.email } },
+            });
+            const user = found.docs[0];
+            if (!user) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+            }
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+
+            await ctx.db.update({
+                collection: "users",
+                id: user.id,
+                data: { otpCode: code, otpExpiresAt: expiresAt },
+            });
+
+            // Send to the email provided in the request to avoid ambiguous user fields
+            const to = input.email || user.googleEmail
+            try {
+                await (ctx.db as any).sendEmail?.({
+                    to,
+                    subject: "Your TradeSocial verification code",
+                    html: `<p>Your login verification code is <strong>${code}</strong>. It expires in 10 minutes.</p>`,
+                });
+            } catch (err) {
+                console.log("OTP code (dev):", code, "to:", to);
+            }
+            return { ok: true };
+        }),
+
+    // Verify OTP code: ensure matches and not expired
+    verifyOtp: baseProcedure
+        .input(z.object({ email: z.string().email(), code: z.string().min(4).max(10) }))
+        .mutation(async ({ ctx, input }) => {
+            const found = await ctx.db.find({
+                collection: "users",
+                limit: 1,
+                where: { email: { equals: input.email } },
+            });
+            const user = found.docs[0] as any;
+            if (!user) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+            }
+            if (!user.otpCode || !user.otpExpiresAt) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "No active OTP request" });
+            }
+            const expired = Date.now() > new Date(user.otpExpiresAt).getTime();
+            if (expired) {
+                await ctx.db.update({ collection: "users", id: user.id, data: { otpCode: null, otpExpiresAt: null } });
+                throw new TRPCError({ code: "BAD_REQUEST", message: "OTP expired" });
+            }
+            if (user.otpCode !== input.code) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid code" });
+            }
+            await ctx.db.update({ collection: "users", id: user.id, data: { otpCode: null, otpExpiresAt: null } });
+            return { ok: true };
+        }),
+
+    // Toggle Email OTP requirement for current user
+    toggleEmailOtp: protectedProcedure
+        .input(z.object({ enabled: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+            const user = ctx.session.user;
+            if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+            const updated = await ctx.db.update({
+                collection: "users",
+                id: user.id,
+                data: { emailOtpEnabled: input.enabled },
+            });
+            return { emailOtpEnabled: (updated as any).emailOtpEnabled === true };
+        }),
+
+    // Check if Email OTP is required for a given email
+    isOtpRequired: baseProcedure
+        .input(z.object({ email: z.string().email() }))
+        .query(async ({ ctx, input }) => {
+            const found = await ctx.db.find({
+                collection: "users",
+                limit: 1,
+                where: { email: { equals: input.email } },
+            });
+            const u = found.docs[0] as any;
+            return { required: !!u?.emailOtpEnabled };
+        }),
 });
