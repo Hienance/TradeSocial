@@ -4,6 +4,7 @@ import { headers as getHeaders} from "next/headers";
 import { loginSchema, registerSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
+import { writeLog } from "@/lib/logger";
 import z from "zod";
 
 export const authRouter = createTRPCRouter({
@@ -14,8 +15,7 @@ export const authRouter = createTRPCRouter({
 
         return session;
     }),
-
-    // Current authenticated user (sanitized)
+    
     me: protectedProcedure.query(async ({ ctx }) => {
         const user = ctx.session.user;
         if (!user) {
@@ -32,7 +32,6 @@ export const authRouter = createTRPCRouter({
         };
     }),
 
-    // Toggle Google-based MFA. When enabling, stamp verification time (assuming current Google auth is valid)
     toggleGoogleMfa: protectedProcedure
         .input(z.object({ enabled: z.boolean() }))
         .mutation(async ({ ctx, input }) => {
@@ -63,7 +62,6 @@ export const authRouter = createTRPCRouter({
             };
         }),
 
-    // Finalize enabling Google MFA after OAuth callback
     finalizeGoogleMfaEnable: protectedProcedure.mutation(async ({ ctx }) => {
         const user = ctx.session.user;
         if (!user) {
@@ -106,8 +104,6 @@ export const authRouter = createTRPCRouter({
                     message: "Username already taken",
                 })
             }
-
-            // create stripe account (wrap in try/catch to handle network/proxy errors)
             
             const account = await stripe.accounts.create({});
 
@@ -155,6 +151,12 @@ export const authRouter = createTRPCRouter({
                     message: "failed to login",
                 });
             }
+
+            const createdUser = await ctx.db.find({ collection: 'users', limit: 1, where: { email: { equals: input.email } } });
+            const u = createdUser.docs[0];
+            if (u) {
+              await writeLog({ type: 'sign-up', userId: u.id, email: input.email });
+            }
         }),
 
     login: baseProcedure
@@ -178,6 +180,12 @@ export const authRouter = createTRPCRouter({
                 value: data.token,
             });
 
+                        // Log sign-in
+            const found = await ctx.db.find({ collection: 'users', limit: 1, where: { email: { equals: input.email } }});
+            const user = found.docs[0];
+            if (user) {
+                await writeLog({ type: 'sign-in', userId: user.id, email: input.email });
+            }
             return data;
         }),
     
@@ -185,13 +193,19 @@ export const authRouter = createTRPCRouter({
         .mutation(async ({ ctx }) => {
             await generateAuthCookie({
                 prefix: ctx.db.config.cookiePrefix,
-                value: "", // clear cookie value
+                value: "", 
             });
 
+            try {
+                const headers = await getHeaders();
+                const session = await ctx.db.auth({ headers });
+                if (session?.user?.id) {
+                await writeLog({ type: 'sign-out', userId: session.user.id });
+                }
+            } catch {}
             return true;
         }),
 
-    // Request OTP code: generate and email to user
     requestOtp: baseProcedure
         .input(z.object({ email: z.string().email() }))
         .mutation(async ({ ctx, input }) => {
@@ -205,7 +219,7 @@ export const authRouter = createTRPCRouter({
                 throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
             }
             const code = Math.floor(100000 + Math.random() * 900000).toString();
-            const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+            const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
             await ctx.db.update({
                 collection: "users",
@@ -213,7 +227,6 @@ export const authRouter = createTRPCRouter({
                 data: { otpCode: code, otpExpiresAt: expiresAt },
             });
 
-            // Send to the email provided in the request to avoid ambiguous user fields
             const to = input.email || user.googleEmail
             try {
                 await (ctx.db as any).sendEmail?.({
@@ -227,7 +240,6 @@ export const authRouter = createTRPCRouter({
             return { ok: true };
         }),
 
-    // Verify OTP code: ensure matches and not expired
     verifyOtp: baseProcedure
         .input(z.object({ email: z.string().email(), code: z.string().min(4).max(10) }))
         .mutation(async ({ ctx, input }) => {
@@ -255,7 +267,6 @@ export const authRouter = createTRPCRouter({
             return { ok: true };
         }),
 
-    // Toggle Email OTP requirement for current user
     toggleEmailOtp: protectedProcedure
         .input(z.object({ enabled: z.boolean() }))
         .mutation(async ({ ctx, input }) => {
@@ -269,7 +280,6 @@ export const authRouter = createTRPCRouter({
             return { emailOtpEnabled: (updated as any).emailOtpEnabled === true };
         }),
 
-    // Check if Email OTP is required for a given email
     isOtpRequired: baseProcedure
         .input(z.object({ email: z.string().email() }))
         .query(async ({ ctx, input }) => {
