@@ -16,6 +16,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@payloadcms/db-mongodb": "^3.63.0",
+    "@payloadcms/email-nodemailer": "^3.65.0",
     "@payloadcms/next": "^3.63.0",
     "@payloadcms/payload-cloud": "^3.63.0",
     "@payloadcms/plugin-multi-tenant": "^3.63.0",
@@ -62,6 +63,7 @@
     "next": "15.5.4",
     "next-auth": "^4.24.13",
     "next-themes": "^0.4.6",
+    "nodemailer": "^7.0.11",
     "nuqs": "^2.7.2",
     "payload": "^3.63.0",
     "public": "^0.1.5",
@@ -84,6 +86,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

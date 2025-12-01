@@ -93,6 +93,19 @@ export const Users: CollectionConfig = {
       }
     },
     {
+      name: "emailOtpEnabled",
+      label: "Require Email OTP",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        description: "Require a verification code sent to your email before login.",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user) || !!req.user,
+      }
+    },
+    {
       name: "mfaGoogleEnabled",
       label: "MFA via Google Enabled",
       type: "checkbox",

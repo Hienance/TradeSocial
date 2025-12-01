@@ -18,6 +18,7 @@ import { Config } from './payload-types';
 import { Orders } from './collections/Orders'
 import { Reviews } from './collections/Reviews'
 import { isSuperAdmin } from './lib/access'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -55,4 +56,16 @@ export default buildConfig({
     }),
     // storage-adapter-placeholder
   ],
+  email: nodemailerAdapter({
+    defaultFromAddress: process.env.EMAIL_FROM || 'no-reply@tradesocial.local',
+    defaultFromName: process.env.EMAIL_FROM_NAME || 'Trade Social',
+    transportOptions: {
+      host: process.env.SMTP_HOST,
+      port: 587,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    },
+  }),
 })

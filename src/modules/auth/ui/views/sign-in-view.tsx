@@ -14,7 +14,8 @@ import { loginSchema } from "../../schemas";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleSignInButton } from "../components/auth-buttons";
 
@@ -39,6 +40,26 @@ export  const SignInView = () => {
         }
     }));
 
+    const requestOtp = useMutation(trpc.auth.requestOtp.mutationOptions({
+        onError: (error) => toast.error(error.message || "Failed to send code"),
+        onSuccess: () => {
+            toast.success("Verification code sent to your email");
+            setOtpSent(true);
+        },
+    }));
+
+    const verifyOtp = useMutation(trpc.auth.verifyOtp.mutationOptions({
+        onError: (error) => toast.error(error.message || "Invalid or expired code"),
+        onSuccess: () => {
+            toast.success("Code verified. You can now log in.");
+            setOtpVerified(true);
+        },
+    }));
+
+    const [otpCode, setOtpCode] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+
 
     const form = useForm<z.infer<typeof loginSchema>>({
         mode: "all",
@@ -49,7 +70,19 @@ export  const SignInView = () => {
         },
     });
 
+    const emailValue = form.watch("email");
+    const otpRequiredQuery = trpc.auth.isOtpRequired.queryOptions({ email: emailValue || "" });
+    const { data: otpRequirement } = useQuery({
+        ...otpRequiredQuery,
+        enabled: !!emailValue,
+    });
+    const otpRequired = !!otpRequirement?.required;
+
     const onSubmit = (values: z.infer<typeof loginSchema>) => {
+        if (otpRequired && !otpVerified) {
+            toast.error("Please verify the code sent to your email first");
+            return;
+        }
         login.mutate(values);
     }
 
@@ -99,8 +132,60 @@ export  const SignInView = () => {
                             </FormItem>
                         )}
                     />
+                    {otpRequired && (
+                    <div className="space-y-4 border rounded-md p-4 bg-white">
+                        <p className="text-sm font-medium">Email Verification</p>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={requestOtp.isPending}
+                                onClick={() => {
+                                    const email = (form.getValues("email") || "").trim();
+                                    if (!email) {
+                                        toast.error("Please enter your email first");
+                                        return;
+                                    }
+                                    requestOtp.mutate({ email });
+                                }}
+                            >
+                                {requestOtp.isPending ? "Sending..." : otpSent ? "Resend Code" : "Send Code"}
+                            </Button>
+                            {otpSent && (
+                                <div className="flex-1 flex gap-2">
+                                    <Input
+                                        placeholder="Enter code"
+                                        value={otpCode}
+                                        onChange={(e) => setOtpCode(e.target.value)}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={verifyOtp.isPending || !otpCode}
+                                        onClick={() => {
+                                            const email = (form.getValues("email") || "").trim();
+                                            if (!email) {
+                                                toast.error("Please enter your email first");
+                                                return;
+                                            }
+                                            verifyOtp.mutate({ email, code: otpCode });
+                                        }}
+                                    >
+                                        {verifyOtp.isPending ? "Verifying..." : otpVerified ? "Verified" : "Verify"}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                        {!otpVerified && otpSent && (
+                            <p className="text-xs text-muted-foreground">Code expires in 10 minutes.</p>
+                        )}
+                        {otpVerified && (
+                            <p className="text-xs text-green-600">Email verified. Proceed to login.</p>
+                        )}
+                    </div>
+                    )}
                     <Button
-                        disabled={login.isPending}
+                        disabled={login.isPending || (otpRequired && !otpVerified)}
                         type="submit"
                         size="lg"
                         variant="elevated"
