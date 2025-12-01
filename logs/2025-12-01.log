@@ -1,0 +1,5 @@
+{"ts":"2025-12-01T03:17:12.172Z","type":"sign-up","userId":"692d08b7209ec5a1917e1f16","email":"wowie@gmail.com"}
+{"ts":"2025-12-01T03:17:37.430Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-01T03:19:43.495Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-01T03:20:21.261Z","type":"sign-in","userId":"692d08b7209ec5a1917e1f16","email":"wowie@gmail.com"}
+{"ts":"2025-12-01T03:25:18.080Z","type":"checkout","userId":"692d08b7209ec5a1917e1f16","tenantSlug":"owner1","productIds":["692949ae479717827cffd5ca"],"totalCents":5000}

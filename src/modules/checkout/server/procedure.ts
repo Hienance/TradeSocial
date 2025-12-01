@@ -7,6 +7,7 @@ import { CheckoutMetadata, ProductMetadata } from "../types";
 import { stripe } from "@/lib/stripe";
 import { PLATFORM_FEE_PERCENTAGE } from "@/constant";
 import { generateTenantURL } from "@/lib/utils";
+import { writeLog } from "@/lib/logger";
 
 
 export const checkoutRouter = createTRPCRouter({
@@ -173,6 +174,13 @@ export const checkoutRouter = createTRPCRouter({
                 throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create checkout session"})
             }
 
+            await writeLog({
+                type: 'checkout',
+                userId: ctx.session.user.id,
+                tenantSlug: input.tenantSlug,
+                productIds: input.productIds,
+                totalCents: totalAmount,
+            });
             return { url: checkout.url}
         }),
 
