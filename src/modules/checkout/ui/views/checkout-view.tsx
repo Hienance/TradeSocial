@@ -36,7 +36,6 @@ export const CheckoutView = ({tenantSlug} : CheckoutViewProps) => {
         },
         onError: (error) => {
             if (error.data?.code === "UNAUTHORIZED") {
-                //TODO: modify when subdomains are enabled
                 router.push("/sign-in");
             }
             toast.error(error.message);

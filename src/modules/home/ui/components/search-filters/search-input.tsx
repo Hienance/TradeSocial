@@ -45,7 +45,6 @@ export const SearchInput = ({
                     onChange={(e) => setSearchValue(e.target.value)}    
                 />
             </div>
-            {/* TODO: add categories view all btn*/}
             <Button
                 variant="elevated"
                 className="size-12 shrink-0 flex lg:hidden"
