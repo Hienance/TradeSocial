@@ -222,7 +222,7 @@ export interface Tenant {
 export interface Media {
   id: string;
   tenant?: (string | null) | Tenant;
-  alt: string;
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;

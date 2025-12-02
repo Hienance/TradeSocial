@@ -50,6 +50,9 @@ export function ProfileView() {
 
 	const [tenantName, setTenantName] = useState(tenant.name);
 	const [tenantDesc, setTenantDesc] = useState(tenant.description || "");
+	const [isUploadingImage, setIsUploadingImage] = useState(false);
+	const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+	const [selectedImageAlt, setSelectedImageAlt] = useState<string>(tenant.name || "Tenant image");
 	
 	// Update tenant mutation
 	const { mutate: updateTenant, isPending: isSaving } = useMutation(
@@ -133,6 +136,46 @@ export function ProfileView() {
 			name: tenantName,
 			description: tenantDesc || null,
 		});
+	};
+
+	// Upload image to Payload Media collection, then save to tenant.image
+	const handleUploadTenantImage = async () => {
+		if (!selectedImageFile) {
+			toast.error("Please select an image file first");
+			return;
+		}
+		try {
+			setIsUploadingImage(true);
+			const formData = new FormData();
+			formData.append("file", selectedImageFile);
+			formData.append("data[alt]", selectedImageAlt || tenant.name || "Tenant image");
+
+			const res = await fetch("/api/media", {
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			});
+
+			if (!res.ok) {
+				const msg = await res.text();
+				throw new Error(msg || "Upload failed");
+			}
+
+			const mediaDoc = await res.json();
+			const mediaId = mediaDoc?.doc?.id ?? mediaDoc?.id;
+			if (!mediaId) throw new Error("No media ID returned");
+
+			updateTenant({
+				image: mediaId,
+			});
+			toast.success("Profile image updated");
+			setSelectedImageFile(null);
+			refetchTenant();
+		} catch (err: any) {
+			toast.error(err?.message || "Failed to upload image");
+		} finally {
+			setIsUploadingImage(false);
+		}
 	};
 
 	const handleVerifyStripe = () => {
@@ -477,6 +520,19 @@ export function ProfileView() {
 									placeholder="Describe your store..."
 									rows={4}
 								/>
+							</div>
+
+							<Separator />
+							<div className="grid gap-2">
+								<label className="text-sm font-medium">Profile Image</label>
+								<div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+									<Input type="file" accept="image/*" onChange={(e)=>setSelectedImageFile(e.target.files?.[0] ?? null)} />
+									<Input value={selectedImageAlt} onChange={(e)=>setSelectedImageAlt(e.target.value)} placeholder="Alt text for accessibility" />
+									<Button disabled={isUploadingImage || !selectedImageFile} onClick={handleUploadTenantImage} variant="elevated" className="sm:ml-auto">
+										{isUploadingImage ? "Uploading..." : "Upload & Save"}
+									</Button>
+								</div>
+								<p className="text-xs text-muted-foreground">Uploads use the Payload Media collection, scoped per-tenant.</p>
 							</div>
 							<Button 
 								disabled={isSaving} 
