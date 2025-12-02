@@ -13,6 +13,8 @@ import { Table } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, formatCurrency, generateTenantURL } from "@/lib/utils";
 import { Settings, Package, Image as LayoutDashboard, Save, ShieldCheck, AlertCircle } from "lucide-react";
+import { MediaUploader } from "@/components/media-uploader";
+import type { Media } from "@/payload-types";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -50,6 +52,8 @@ export function ProfileView() {
 
 	const [tenantName, setTenantName] = useState(tenant.name);
 	const [tenantDesc, setTenantDesc] = useState(tenant.description || "");
+	const initialTenantImageId = typeof tenant.image === 'string' ? tenant.image : (tenant.image as Media | undefined)?.id;
+	const [tenantImageId, setTenantImageId] = useState<string | null>(initialTenantImageId || null);
 	
 	// Update tenant mutation
 	const { mutate: updateTenant, isPending: isSaving } = useMutation(
@@ -132,6 +136,7 @@ export function ProfileView() {
 		updateTenant({
 			name: tenantName,
 			description: tenantDesc || null,
+			image: tenantImageId || null,
 		});
 	};
 
@@ -443,13 +448,24 @@ export function ProfileView() {
 						</CardContent>
 					</Card>
 
-					{/* General Settings Card TODO: Add the ability to change profile picture */}
+					{/* General Settings Card */}
 					<Card>
 						<CardHeader>
 							<CardTitle>General</CardTitle>
 							<CardDescription>Change your store information</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
+							<div className="space-y-2">
+								<label className="text-sm font-medium">Store Image</label>
+														<MediaUploader
+									label="Upload Store Image"
+															value={typeof tenant.image === 'object' ? tenant.image : tenantImageId as any}
+									onChange={setTenantImageId}
+									disabled={isSaving}
+															tenantSlug={tenant.slug}
+								/>
+								<p className="text-xs text-muted-foreground">Displayed publicly on your store front.</p>
+							</div>
 							<div className="grid gap-2">
 								<label className="text-sm font-medium">Store Name</label>
 								<Input 

@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { refundPolicy } from "@/modules/profiles/types";
+import { MediaUploader } from "@/components/media-uploader";
+import type { Media } from "@/payload-types";
 
 interface CreateProductDialogProps {
     disabled?: boolean;
@@ -33,6 +35,8 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
     const [refundPolicy, setRefundPolicy] = useState<string>("30-day");
     const [content, setContent] = useState("");
     const [isPrivate, setIsPrivate] = useState(false);
+    const [imageId, setImageId] = useState<string | null>(null);
+    const [coverId, setCoverId] = useState<string | null>(null);
 
     // Fetch categories
     const { data: categories } = useSuspenseQuery(
@@ -100,6 +104,8 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
             refundPolicy: refundPolicy as refundPolicy,
             content: content.trim() || undefined,
             isPrivate,
+            image: imageId || undefined,
+            cover: coverId || undefined,
         });
     };
 
@@ -232,7 +238,25 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
                             </Select>
                         </div>
 
-                        {/* Content (Protected) */}
+                                                {/* Images */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                    <MediaUploader
+                                                        label="Primary Image"
+                                                        value={imageId as any}
+                                                        onChange={setImageId}
+                                                        disabled={isPending}
+                                                        tenantSlug={(typeof window === 'undefined') ? undefined : undefined}
+                                                    />
+                                                    <MediaUploader
+                                                        label="Cover Image"
+                                                        value={coverId as any}
+                                                        onChange={setCoverId}
+                                                        disabled={isPending}
+                                                        tenantSlug={(typeof window === 'undefined') ? undefined : undefined}
+                                                    />
+                                                </div>
+
+                                                {/* Content (Protected) */}
                         <div className="space-y-2">
                             <Label htmlFor="content">Protected Content</Label>
                             <Textarea

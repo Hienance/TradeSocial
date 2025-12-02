@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Product } from "@/payload-types";
 import { refundPolicy } from "@/modules/profiles/types";
+import { MediaUploader } from "@/components/media-uploader";
+import type { Media } from "@/payload-types";
 
 interface EditProductDialogProps {
     product: Product;
@@ -44,6 +46,10 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
         typeof product.content === 'string' ? product.content : ""
     );
     const [isPrivate, setIsPrivate] = useState(!!product.isPrivate);
+    const initialImageId = typeof product.image === 'string' ? product.image : (product.image as Media | undefined)?.id;
+    const initialCoverId = typeof product.cover === 'string' ? product.cover : (product.cover as Media | undefined)?.id;
+    const [imageId, setImageId] = useState<string | null>(initialImageId || null);
+    const [coverId, setCoverId] = useState<string | null>(initialCoverId || null);
 
     // Reset form when product changes or dialog opens
     useEffect(() => {
@@ -60,6 +66,10 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
             setRefundPolicy(product.refundPolicy || "30-day");
             setContent(typeof product.content === 'string' ? product.content : "");
             setIsPrivate(!!product.isPrivate);
+            const imgId = typeof product.image === 'string' ? product.image : (product.image as Media | undefined)?.id;
+            const covId = typeof product.cover === 'string' ? product.cover : (product.cover as Media | undefined)?.id;
+            setImageId(imgId || null);
+            setCoverId(covId || null);
         }
     }, [open, product]);
 
@@ -118,6 +128,8 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
             refundPolicy: refundPolicy as refundPolicy,
             content: content.trim() || undefined,
             isPrivate,
+            image: imageId || undefined,
+            cover: coverId || undefined,
         });
     };
 
@@ -248,7 +260,25 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
                             </Select>
                         </div>
 
-                        {/* Content (Protected) TODO: ADD THE ABILITY TO UPLOAD FILES AND IMAGES FOR SPECIAL CONTENT, PRODUCT IMAGE AND COVERS*/}
+                                                {/* Images */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                    <MediaUploader
+                                                        label="Primary Image"
+                                                        value={typeof product.image === 'object' ? product.image : imageId as any}
+                                                        onChange={setImageId}
+                                                        disabled={isPending}
+                                                        tenantSlug={(typeof window === 'undefined') ? undefined : undefined}
+                                                    />
+                                                    <MediaUploader
+                                                        label="Cover Image"
+                                                        value={typeof product.cover === 'object' ? product.cover : coverId as any}
+                                                        onChange={setCoverId}
+                                                        disabled={isPending}
+                                                        tenantSlug={(typeof window === 'undefined') ? undefined : undefined}
+                                                    />
+                                                </div>
+
+                                                {/* Content (Protected) */}
                         <div className="space-y-2">
                             <Label htmlFor="content">Protected Content</Label>
                             <Textarea

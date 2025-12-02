@@ -4,3 +4,9 @@
 {"ts":"2025-12-02T04:57:40.241Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
 {"ts":"2025-12-02T04:57:40.249Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
 {"ts":"2025-12-02T04:57:49.670Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-02T05:27:43.274Z","type":"sign-in","userId":"69294923479717827cffcc31","email":"owner1@demo.com"}
+{"ts":"2025-12-02T05:27:48.470Z","type":"sign-in","userId":"69294923479717827cffcc31","email":"owner1@demo.com"}
+{"ts":"2025-12-02T05:33:35.958Z","type":"sign-out","userId":"69294923479717827cffcc31"}
+{"ts":"2025-12-02T05:33:55.867Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-02T05:33:55.897Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-02T05:34:01.558Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
