@@ -50,6 +50,7 @@ export function ProfileView() {
 
 	const [tenantName, setTenantName] = useState(tenant.name);
 	const [tenantDesc, setTenantDesc] = useState(tenant.description || "");
+	const [tenantImage, setTenantImage] = useState<File | null>(null);
 	
 	// Update tenant mutation
 	const { mutate: updateTenant, isPending: isSaving } = useMutation(
@@ -128,11 +129,36 @@ export function ProfileView() {
 		})
 	);
 
-	const handleSaveSettings = () => {
-		updateTenant({
-			name: tenantName,
-			description: tenantDesc || null,
-		});
+	const handleSaveSettings = async () => {
+		try {
+			let imageId: string | undefined | null = undefined;
+			if (tenantImage) {
+				const formData = new FormData();
+				formData.append("file", tenantImage);
+				formData.append(
+					"_payload",
+					JSON.stringify({ alt: "Tenant Image" })
+				);
+
+				const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL;
+				const uploadUrl = baseUrl ? `${baseUrl}/api/media` : "/api/media";
+				const res = await fetch(uploadUrl, { method: "POST", body: formData });
+				if (!res.ok) throw new Error("Failed to upload image");
+				const data = await res.json();
+				imageId = data?.doc?.id;
+				if (!imageId) throw new Error("Failed to upload image");
+			} else {
+				imageId = undefined; // do not change image if not provided
+			}
+
+			updateTenant({
+				name: tenantName,
+				description: tenantDesc || null,
+				image: imageId,
+			});
+		} catch (err: any) {
+			toast.error(err?.message || "Failed to save settings");
+		}
 	};
 
 	const handleVerifyStripe = () => {
@@ -459,15 +485,20 @@ export function ProfileView() {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-sm font-medium">Store URL</label>
-								<Input 
-									value={tenant.slug} 
-									disabled
-									className="bg-muted"
+								<label className="text-sm font-medium">Store image</label>
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={(e) => {
+										const file = e.target.files?.[0] ?? null;
+										setTenantImage(file);
+									}}
 								/>
-								<p className="text-xs text-muted-foreground">
-									Store URL cannot be changed
-								</p>
+								{tenantImage && (
+									<p className="text-xs text-muted-foreground">
+										Selected: {tenantImage.name} ({Math.round(tenantImage.size / 1024)} KB)
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<label className="text-sm font-medium">Description</label>

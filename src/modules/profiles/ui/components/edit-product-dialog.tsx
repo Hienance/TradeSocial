@@ -44,6 +44,8 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
         typeof product.content === 'string' ? product.content : ""
     );
     const [isPrivate, setIsPrivate] = useState(!!product.isPrivate);
+    const [newImageFile, setNewImageFile] = useState<File | null>(null);
+    const [newCoverFile, setNewCoverFile] = useState<File | null>(null);
 
     // Reset form when product changes or dialog opens
     useEffect(() => {
@@ -60,6 +62,8 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
             setRefundPolicy(product.refundPolicy || "30-day");
             setContent(typeof product.content === 'string' ? product.content : "");
             setIsPrivate(!!product.isPrivate);
+            setNewImageFile(null);
+            setNewCoverFile(null);
         }
     }, [open, product]);
 
@@ -89,7 +93,21 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
         })
     );
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const uploadToPayload = async (file: File, alt: string) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("_payload", JSON.stringify({ alt }));
+        const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL;
+        const uploadUrl = baseUrl ? `${baseUrl}/api/media` : "/api/media";
+        const res = await fetch(uploadUrl, { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Failed to upload image");
+        const data = await res.json();
+        const id = data?.doc?.id as string | undefined;
+        if (!id) throw new Error("Failed to upload image");
+        return id;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!name.trim()) {
@@ -108,17 +126,28 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
             return;
         }
 
-        updateProduct({
-            id: product.id,
-            name: name.trim(),
-            description: description.trim() || undefined,
-            price: priceNum,
-            category: category,
-            tags: selectedTags.length > 0 ? selectedTags : undefined,
-            refundPolicy: refundPolicy as refundPolicy,
-            content: content.trim() || undefined,
-            isPrivate,
-        });
+        try {
+            let imageId: string | undefined;
+            let coverId: string | undefined;
+            if (newImageFile) imageId = await uploadToPayload(newImageFile, "Product Image");
+            if (newCoverFile) coverId = await uploadToPayload(newCoverFile, "Product Cover");
+
+            updateProduct({
+                id: product.id,
+                name: name.trim(),
+                description: description.trim() || undefined,
+                price: priceNum,
+                category: category,
+                tags: selectedTags.length > 0 ? selectedTags : undefined,
+                refundPolicy: refundPolicy as refundPolicy,
+                content: content.trim() || undefined,
+                isPrivate,
+                ...(typeof imageId !== 'undefined' ? { image: imageId } : {}),
+                ...(typeof coverId !== 'undefined' ? { cover: coverId } : {}),
+            });
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to update product");
+        }
     };
 
     const toggleTag = (tagId: string) => {
@@ -143,6 +172,37 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
                 </DialogHeader>
                 <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
                     <form onSubmit={handleSubmit} className="space-y-6">
+                                                {/* Images */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="image">Product Image</Label>
+                                                        <Input
+                                                            id="image"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => setNewImageFile(e.target.files?.[0] ?? null)}
+                                                        />
+                                                        {newImageFile ? (
+                                                            <p className="text-xs text-muted-foreground">Selected: {newImageFile.name}</p>
+                                                        ) : (
+                                                            <p className="text-xs text-muted-foreground">Leave empty to keep existing image</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="cover">Cover Image</Label>
+                                                        <Input
+                                                            id="cover"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => setNewCoverFile(e.target.files?.[0] ?? null)}
+                                                        />
+                                                        {newCoverFile ? (
+                                                            <p className="text-xs text-muted-foreground">Selected: {newCoverFile.name}</p>
+                                                        ) : (
+                                                            <p className="text-xs text-muted-foreground">Leave empty to keep existing cover</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                         {/* Name */}
                         <div className="space-y-2">
                             <Label htmlFor="name">

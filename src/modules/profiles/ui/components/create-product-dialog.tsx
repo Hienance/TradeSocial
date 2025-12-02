@@ -33,6 +33,8 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
     const [refundPolicy, setRefundPolicy] = useState<string>("30-day");
     const [content, setContent] = useState("");
     const [isPrivate, setIsPrivate] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [coverFile, setCoverFile] = useState<File | null>(null);
 
     // Fetch categories
     const { data: categories } = useSuspenseQuery(
@@ -70,9 +72,25 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
         setRefundPolicy("30-day");
         setContent("");
         setIsPrivate(false);
+        setImageFile(null);
+        setCoverFile(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const uploadToPayload = async (file: File, alt: string) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("_payload", JSON.stringify({ alt }));
+        const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL;
+        const uploadUrl = baseUrl ? `${baseUrl}/api/media` : "/api/media";
+        const res = await fetch(uploadUrl, { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Failed to upload image");
+        const data = await res.json();
+        const id = data?.doc?.id as string | undefined;
+        if (!id) throw new Error("Failed to upload image");
+        return id;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!name.trim()) {
@@ -91,16 +109,27 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
             return;
         }
 
-        createProduct({
-            name: name.trim(),
-            description: description.trim() || undefined,
-            price: priceNum,
-            category: category,
-            tags: selectedTags.length > 0 ? selectedTags : undefined,
-            refundPolicy: refundPolicy as refundPolicy,
-            content: content.trim() || undefined,
-            isPrivate,
-        });
+        try {
+            let imageId: string | undefined;
+            let coverId: string | undefined;
+            if (imageFile) imageId = await uploadToPayload(imageFile, "Product Image");
+            if (coverFile) coverId = await uploadToPayload(coverFile, "Product Cover");
+
+            createProduct({
+                name: name.trim(),
+                description: description.trim() || undefined,
+                price: priceNum,
+                category: category,
+                tags: selectedTags.length > 0 ? selectedTags : undefined,
+                refundPolicy: refundPolicy as refundPolicy,
+                content: content.trim() || undefined,
+                isPrivate,
+                image: imageId,
+                cover: coverId,
+            });
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to create product");
+        }
     };
 
     const toggleTag = (tagId: string) => {
@@ -127,6 +156,33 @@ export function CreateProductDialog({ disabled, onSuccess }: CreateProductDialog
                 </DialogHeader>
                 <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
                     <form onSubmit={handleSubmit} className="space-y-6">
+                                                {/* Images */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="image">Product Image</Label>
+                                                        <Input
+                                                            id="image"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                                                        />
+                                                        {imageFile && (
+                                                            <p className="text-xs text-muted-foreground">Selected: {imageFile.name}</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="cover">Cover Image</Label>
+                                                        <Input
+                                                            id="cover"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
+                                                        />
+                                                        {coverFile && (
+                                                            <p className="text-xs text-muted-foreground">Selected: {coverFile.name}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                         {/* Name */}
                         <div className="space-y-2">
                             <Label htmlFor="name">
