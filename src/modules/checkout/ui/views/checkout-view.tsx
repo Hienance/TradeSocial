@@ -23,9 +23,14 @@ export const CheckoutView = ({tenantSlug} : CheckoutViewProps) => {
 
     const trpc = useTRPC();
     const queryClient = useQueryClient(); 
-    const { data, error, isLoading } = useQuery(trpc.checkout.getProducts.queryOptions({
-        ids: productIds,
-    }))
+    const queryOptions = trpc.checkout.getProducts.queryOptions({ ids: productIds });
+    const { data, error, isLoading } = useQuery({
+        ...queryOptions,
+        // Avoid jarring reloads when quantities change
+        placeholderData: (prev) => prev,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+    });
 
     const purchase  = useMutation(trpc.checkout.purchase.mutationOptions({
         onMutate: () => {
@@ -58,7 +63,7 @@ export const CheckoutView = ({tenantSlug} : CheckoutViewProps) => {
         }
     }, [error, clearCart])
 
-    if (isLoading) {
+    if (isLoading && !data) {
         return (
             <div className=" lg:pt-16 pt-4 lg:px-12">  
                 <div className="border border-black border-dashed flex items-center justify-center p-8 flex-col gap-y-4 bg-white w-full rounded-lg">
@@ -95,6 +100,8 @@ export const CheckoutView = ({tenantSlug} : CheckoutViewProps) => {
                                 tenantName={product.tenant.name}
                                 price={product.price}
                                 onRemove={() => removeProduct(product.id)}
+                                tenantSlug={product.tenant.slug}
+                                productId={product.id}
                             />
                         ))}
                     </div>
