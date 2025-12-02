@@ -5,6 +5,7 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
 
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import Script from "next/script";
 
 
 const dmSans = DM_Sans({
@@ -26,6 +27,9 @@ export default function RootLayout({
       <body
         className={`${dmSans.className} antialiased`}
       >
+        <Script 
+          strategy="beforeInteractive"
+          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}/>
         <NuqsAdapter>
           <TRPCReactProvider>
             {children}

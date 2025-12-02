@@ -17,6 +17,7 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { GoogleSignUpButton } from "../components/auth-buttons";
+import { getRecaptchaToken } from "@/lib/captcha";
 
 const poppins = Poppins({
     subsets: ["latin"],
@@ -49,7 +50,30 @@ export  const SignUpView = () => {
         },
     });
 
-    const onSubmit = (values: z.infer<typeof registerSchema>) => {
+    const onSubmit = async (values: z.infer<typeof registerSchema>) => {
+        try {
+            const token = await getRecaptchaToken();
+            if (!token) {
+                toast.error("Captcha token not found");
+                return;
+            }
+
+            const res = await fetch("/api/captcha/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({ message: "Captcha verification failed" }));
+                toast.error(data?.message || "Captcha verification failed");
+                return;
+            }
+        } catch (e) {
+            toast.error("Captcha verification failed");
+            return;
+        }
+
         register.mutate(values);
     }
 

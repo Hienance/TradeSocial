@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleSignInButton } from "../components/auth-buttons";
+import { getRecaptchaToken } from "@/lib/captcha";
 
 
 const poppins = Poppins({
@@ -78,11 +79,35 @@ export  const SignInView = () => {
     });
     const otpRequired = !!otpRequirement?.required;
 
-    const onSubmit = (values: z.infer<typeof loginSchema>) => {
+    const onSubmit = async (values: z.infer<typeof loginSchema>) => {
         if (otpRequired && !otpVerified) {
             toast.error("Please verify the code sent to your email first");
             return;
         }
+
+        try {
+            const token = await getRecaptchaToken();
+            if (!token) {
+                toast.error("Captcha token not found");
+                return;
+            }
+
+            const res = await fetch("/api/captcha/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({ message: "Captcha verification failed" }));
+                toast.error(data?.message || "Captcha verification failed");
+                return;
+            }
+        } catch (e) {
+            toast.error("Captcha verification failed");
+            return;
+        }
+
         login.mutate(values);
     }
 
