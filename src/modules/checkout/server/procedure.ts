@@ -66,6 +66,13 @@ export const checkoutRouter = createTRPCRouter({
             })
         )
         .mutation(async ({ctx, input}) => {
+            // Build quantity map (allows duplicates in productIds)
+            const qtyMap = input.productIds.reduce<Record<string, number>>((acc, id) => {
+                acc[id] = (acc[id] || 0) + 1;
+                return acc;
+            }, {});
+            const uniqueIds = Object.keys(qtyMap);
+
             const products = await ctx.db.find({
                 collection: "products",
                 depth: 2,
@@ -76,7 +83,7 @@ export const checkoutRouter = createTRPCRouter({
                     and: [
                         {
                             id: {
-                                in: input.productIds,
+                                in: uniqueIds,
                             }
                         },
                         {
@@ -93,7 +100,7 @@ export const checkoutRouter = createTRPCRouter({
                 }
             })
 
-            if (products.totalDocs !== input.productIds.length) {
+            if (products.totalDocs !== uniqueIds.length) {
                 throw new TRPCError({code: "NOT_FOUND", message: "Products not found"});
             }
 
@@ -126,7 +133,7 @@ export const checkoutRouter = createTRPCRouter({
 
             const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = 
             products.docs.map((product) => ({
-                quantity: 1,
+                quantity: Math.max(1, qtyMap[product.id] || 1),
                 price_data: {
                     unit_amount: product.price * 100,
                     currency: "usd",
@@ -143,7 +150,7 @@ export const checkoutRouter = createTRPCRouter({
             }));
 
             const totalAmount = products.docs.reduce(
-                (acc, item) => acc + item.price * 100, 
+                (acc, item) => acc + (item.price * 100) * Math.max(1, qtyMap[item.id] || 1), 
                 0
             );
 
@@ -191,6 +198,12 @@ export const checkoutRouter = createTRPCRouter({
             }),
         )
         .query(async({ctx, input}) => {
+            const qtyMap = input.ids.reduce<Record<string, number>>((acc, id) => {
+                acc[id] = (acc[id] || 0) + 1;
+                return acc;
+            }, {});
+            const uniqueIds = Object.keys(qtyMap);
+
             const data = await ctx.db.find({
                 collection: "products",
                 depth: 2,
@@ -198,7 +211,7 @@ export const checkoutRouter = createTRPCRouter({
                     and: [
                         {
                             id: {
-                                in: input.ids,
+                                in: uniqueIds,
                             },
                         },
                         {
@@ -210,13 +223,14 @@ export const checkoutRouter = createTRPCRouter({
                 },
             });
 
-        if (data.totalDocs !== input.ids.length) {
+        if (data.totalDocs !== uniqueIds.length) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Product not found"});
         }
 
         const totalPrice = data.docs.reduce((acc,product) => {
             const price = Number(product.price);
-            return acc + (isNaN(price) ? 0 : price);
+            const qty = Math.max(1, qtyMap[product.id] || 1);
+            return acc + (isNaN(price) ? 0 : price * qty);
         }, 0)
 
         return {
