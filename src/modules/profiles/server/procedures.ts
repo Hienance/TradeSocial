@@ -144,6 +144,7 @@ export const profilesRouter = createTRPCRouter({
                 page: z.number().default(1),
                 limit: z.number().default(10),
                 includeArchived: z.boolean().default(false),
+                search: z.string().nullable().optional(),
             })
         )
         .query(async ({ ctx, input }) => {
@@ -169,6 +170,12 @@ export const profilesRouter = createTRPCRouter({
                 };
             }
 
+            if (input.search) {
+                where.name = {
+                    like: input.search,
+                };
+            }
+
             const products = await ctx.db.find({
                 collection: "products",
                 where,
@@ -179,5 +186,40 @@ export const profilesRouter = createTRPCRouter({
             });
 
             return products;
+        }),
+
+    // Stats for dashboard: counts without fetching all docs
+    getMyProductStats: protectedProcedure
+        .query(async ({ ctx }) => {
+            const user = ctx.session.user;
+            const tenant = user.tenants?.[0]?.tenant as Tenant;
+
+            if (!tenant) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "User does not have a tenant",
+                });
+            }
+
+            const activeWhere: any = {
+                tenant: { equals: tenant.id },
+                isArchived: { not_equals: true },
+            };
+
+            const privateActiveWhere: any = {
+                tenant: { equals: tenant.id },
+                isArchived: { not_equals: true },
+                isPrivate: { equals: true },
+            };
+
+            const [activeRes, privateRes] = await Promise.all([
+                ctx.db.find({ collection: "products", where: activeWhere, page: 1, limit: 1, depth: 0 }),
+                ctx.db.find({ collection: "products", where: privateActiveWhere, page: 1, limit: 1, depth: 0 }),
+            ]);
+
+            return {
+                totalActive: activeRes.totalDocs,
+                totalPrivateActive: privateRes.totalDocs,
+            };
         }),
 });

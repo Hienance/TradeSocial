@@ -308,7 +308,7 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
                             </Select>
                         </div>
 
-                        {/* Content (Protected) TODO: ADD THE ABILITY TO UPLOAD FILES AND IMAGES FOR SPECIAL CONTENT, PRODUCT IMAGE AND COVERS*/}
+                        {/* Content (Protected) TODO: ADD THE ABILITY TO UPLOAD FILESFOR SPECIAL CONTENT*/}
                         <div className="space-y-2">
                             <Label htmlFor="content">Protected Content</Label>
                             <Textarea

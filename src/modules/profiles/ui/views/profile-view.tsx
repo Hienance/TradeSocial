@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -39,12 +39,26 @@ export function ProfileView() {
 		trpc.profiles.getTenant.queryOptions()
 	);
 	
-	// Fetch products
+	// Products pagination state (10 per page)
+	const [productsPage, setProductsPage] = useState(1);
+	const PRODUCTS_PAGE_SIZE = 10;
+	const [productSearch, setProductSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+
+	useEffect(() => {
+		const t = setTimeout(() => {
+			setDebouncedSearch(productSearch.trim());
+		}, 300);
+		return () => clearTimeout(t);
+	}, [productSearch]);
+
+	// Fetch products with pagination
 	const { data: products, refetch: refetchProducts } = useSuspenseQuery(
 		trpc.profiles.getMyProducts.queryOptions({
-			page: 1,
-			limit: 50,
+			page: productsPage,
+			limit: PRODUCTS_PAGE_SIZE,
 			includeArchived: true,
+			search: debouncedSearch || undefined,
 		})
 	);
 
@@ -167,6 +181,11 @@ export function ProfileView() {
 
 	const activeProducts = products.docs.filter(p => !p.isArchived);
 
+	// Fetch product stats for dashboard (full counts)
+	const { data: productStats } = useSuspenseQuery(
+		trpc.profiles.getMyProductStats.queryOptions()
+	);
+
 	const formatLastVerified = (iso?: string | null) => {
 		if (!iso) return "Never";
 		const d = new Date(iso);
@@ -215,7 +234,7 @@ export function ProfileView() {
 								<CardDescription>Total active products</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<p className="text-4xl font-semibold">{activeProducts.length}</p>
+								<p className="text-4xl font-semibold">{productStats?.totalActive ?? 0}</p>
 							</CardContent>
 						</Card>
 						<Card>
@@ -224,7 +243,7 @@ export function ProfileView() {
 								<CardDescription>Store-only visibility</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<p className="text-4xl font-semibold">{activeProducts.filter(p => p.isPrivate).length}</p>
+								<p className="text-4xl font-semibold">{productStats?.totalPrivateActive ?? 0}</p>
 							</CardContent>
 						</Card>
 						<Card>
@@ -276,15 +295,36 @@ export function ProfileView() {
 						</CardContent>
 					</Card>
 				</TabsContent>
-
-				{/* Products TODO: ADD SIMPLE SEARCH FILTER FOR PRODUDCTS*/}
 				<TabsContent value="products" className="space-y-6">
-					<div className="flex justify-between items-center">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<h2 className={cn("text-2xl font-semibold", poppins.className)}>Products</h2>
-						<CreateProductDialog 
-							disabled={!tenant.stripeDetailsSubmitted}
-							onSuccess={refetchProducts}
-						/>
+						<div className="flex w-full sm:w-auto gap-2">
+							<Input
+								placeholder="Search products by name..."
+								value={productSearch}
+								onChange={(e) => {
+									setProductsPage(1);
+									setProductSearch(e.target.value);
+								}}
+							/>
+							<Button
+								variant="outline"
+								onClick={() => {
+									setProductsPage(1);
+									setProductSearch("");
+								}}
+								disabled={!productSearch}
+							>
+								Clear
+							</Button>
+							<CreateProductDialog 
+								disabled={!tenant.stripeDetailsSubmitted}
+								onSuccess={() => {
+									// Stay on current filters, just refetch
+									refetchProducts();
+								}}
+							/>
+						</div>
 					</div>
 					{!tenant.stripeDetailsSubmitted && (
 						<Alert>
@@ -297,6 +337,7 @@ export function ProfileView() {
 					<Card>
 						<CardContent className="p-0">
 							{products.docs.length > 0 ? (
+								<>
 								<ScrollArea className="max-h-[600px]">
 									<Table>
 										<thead>
@@ -347,6 +388,32 @@ export function ProfileView() {
 										</tbody>
 									</Table>
 								</ScrollArea>
+								<div className="flex items-center justify-between px-4 py-3 border-t">
+									<div className="text-sm text-muted-foreground">
+										Page {productsPage}
+									</div>
+									<div className="flex gap-2">
+										<Button
+											variant="outline"
+											disabled={products.hasPrevPage === false || productsPage <= 1}
+											onClick={() => {
+												setProductsPage((prev) => Math.max(1, prev - 1));
+											}}
+										>
+											Previous
+										</Button>
+										<Button
+											variant="outline"
+											disabled={products.hasNextPage === false}
+											onClick={() => {
+												setProductsPage((prev) => prev + 1);
+											}}
+										>
+											Next
+										</Button>
+									</div>
+								</div>
+								</>
 							) : (
 								<div className="p-12 text-center">
 									<p className="text-muted-foreground mb-4">No products yet</p>
@@ -468,8 +535,6 @@ export function ProfileView() {
 							)}
 						</CardContent>
 					</Card>
-
-					{/* General Settings Card TODO: Add the ability to change profile picture */}
 					<Card>
 						<CardHeader>
 							<CardTitle>General</CardTitle>
