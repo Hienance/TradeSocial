@@ -2,39 +2,8 @@ import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { Tenant } from "@/payload-types";
+import { createProductSchema, updateProductSchema, updateTenantSchema } from "../schemas";
 
-const createProductSchema = z.object({
-    name: z.string().min(1, "Product name is required"),
-    description: z.any().optional(),
-    price: z.number().min(0, "Price must be positive"),
-    category: z.string().min(1, "Category is required"),
-    tags: z.array(z.string()).optional(),
-    image: z.string().optional(),
-    cover: z.string().optional(),
-    refundPolicy: z.enum(["30-day", "14-day", "7-day", "1-day", "no-refunds"]).default("30-day"),
-    content: z.any().optional(),
-    isPrivate: z.boolean().default(false),
-});
-
-const updateProductSchema = z.object({
-    id: z.string(),
-    name: z.string().min(1, "Product name is required").optional(),
-    description: z.any().optional(),
-    price: z.number().min(0, "Price must be positive").optional(),
-    category: z.string().optional().nullable(),
-    tags: z.array(z.string()).optional(),
-    image: z.string().optional().nullable(),
-    cover: z.string().optional().nullable(),
-    refundPolicy: z.enum(["30-day", "14-day", "7-day", "1-day", "no-refunds"]).optional(),
-    content: z.any().optional(),
-    isPrivate: z.boolean().optional(),
-});
-
-const updateTenantSchema = z.object({
-    name: z.string().min(1, "Store name is required").optional(),
-    description: z.string().optional().nullable(),
-    image: z.string().optional().nullable(),
-});
 
 export const profilesRouter = createTRPCRouter({
     // Create a new product
@@ -129,10 +98,17 @@ export const profilesRouter = createTRPCRouter({
                 });
             }
 
+            // Build update payload. Only set image when provided.
+            const data: Record<string, unknown> = {};
+            if (typeof input.name !== 'undefined') data.name = input.name;
+            if (typeof input.description !== 'undefined') data.description = input.description;
+            if (typeof input.image === 'string') data.image = input.image; // set to provided media ID
+            if (input.image === null) data.image = null; // allow clearing image
+
             const updatedTenant = await ctx.db.update({
                 collection: "tenants",
                 id: tenant.id,
-                data: input,
+                data,
             });
 
             return updatedTenant;
@@ -161,7 +137,7 @@ export const profilesRouter = createTRPCRouter({
         return tenantData;
     }),
 
-    // Get user's products
+
     getMyProducts: protectedProcedure
         .input(
             z.object({

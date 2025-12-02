@@ -100,7 +100,8 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
 
                         <div className="p-6">
                             {data.description ? (
-                                <RichText data={data.description} converters={defaultJSXConverters}/>
+                                /*<RichText data={data.description} converters={defaultJSXConverters}/>*/
+                                <>{data.description}</>
                             ) : (
                                 <p className="font-medium text-muted-foreground italic">
                                     No description provided
