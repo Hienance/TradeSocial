@@ -85,6 +85,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/grecaptcha": "^3.0.9",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",
     "@types/react": "^19",
