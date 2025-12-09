@@ -151,12 +151,12 @@ export function ProfileView() {
 				formData.append("file", tenantImage);
 				formData.append(
 					"_payload",
-					JSON.stringify({ alt: "Tenant Image" })
+					JSON.stringify({ alt: "Tenant Image", tenant: tenant.id })
 				);
 
 				const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL;
 				const uploadUrl = baseUrl ? `${baseUrl}/api/media` : "/api/media";
-				const res = await fetch(uploadUrl, { method: "POST", body: formData });
+				const res = await fetch(uploadUrl, { method: "POST", body: formData, credentials: 'include' });
 				if (!res.ok) throw new Error("Failed to upload image");
 				const data = await res.json();
 				imageId = data?.doc?.id;
