@@ -24,6 +24,10 @@ interface EditProductDialogProps {
 export function EditProductDialog({ product, onSuccess, children }: EditProductDialogProps) {
     const trpc = useTRPC();
     const [open, setOpen] = useState(false);
+    // Current tenant for assigning media uploads
+    const { data: tenant } = useSuspenseQuery(
+        trpc.profiles.getTenant.queryOptions()
+    );
     
     // Form state - initialized with product data
     const [name, setName] = useState(product.name);
@@ -96,10 +100,10 @@ export function EditProductDialog({ product, onSuccess, children }: EditProductD
     const uploadToPayload = async (file: File, alt: string) => {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("_payload", JSON.stringify({ alt }));
+        formData.append("_payload", JSON.stringify({ alt, tenant: tenant.id }));
         const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL;
         const uploadUrl = baseUrl ? `${baseUrl}/api/media` : "/api/media";
-        const res = await fetch(uploadUrl, { method: "POST", body: formData });
+        const res = await fetch(uploadUrl, { method: "POST", body: formData, credentials: 'include' });
         if (!res.ok) throw new Error("Failed to upload image");
         const data = await res.json();
         const id = data?.doc?.id as string | undefined;
