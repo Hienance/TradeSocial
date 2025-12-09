@@ -152,6 +152,11 @@ export const authRouter = createTRPCRouter({
                 });
             }
 
+            await generateAuthCookie ({
+                prefix: ctx.db.config.cookiePrefix,
+                value: data.token,
+            });
+
             const createdUser = await ctx.db.find({ collection: 'users', limit: 1, where: { email: { equals: input.email } } });
             const u = createdUser.docs[0];
             if (u) {
@@ -160,7 +165,7 @@ export const authRouter = createTRPCRouter({
         }),
 
     login: baseProcedure
-        .input(loginSchema).mutation(async({input, ctx}) => {
+        .input(loginSchema).mutation(async({input, ctx}) => {    
             const data = await ctx.db.login({
                 collection: "users",
                 data: {
@@ -175,12 +180,13 @@ export const authRouter = createTRPCRouter({
                     message: "failed to login",
                 });
             }
+            
             await generateAuthCookie ({
                 prefix: ctx.db.config.cookiePrefix,
                 value: data.token,
             });
 
-                        // Log sign-in
+            // Log sign-in
             const found = await ctx.db.find({ collection: 'users', limit: 1, where: { email: { equals: input.email } }});
             const user = found.docs[0];
             if (user) {
