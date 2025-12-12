@@ -11,3 +11,10 @@
 {"ts":"2025-12-11T12:56:55.240Z","type":"checkout","userId":"69294920479717827cffcc0d","tenantSlug":"owner1","productIds":["692949b0479717827cffd5de"],"totalCents":5000}
 {"ts":"2025-12-11T13:04:35.003Z","type":"checkout","userId":"69294920479717827cffcc0d","tenantSlug":"owner1","productIds":["692949b0479717827cffd5de"],"totalCents":5000}
 {"ts":"2025-12-11T13:07:36.069Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-11T13:29:41.526Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-11T13:29:41.527Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-11T13:32:33.744Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-11T13:33:18.474Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-11T13:33:27.072Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-11T13:33:31.790Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-11T13:34:50.334Z","type":"sign-in","userId":"69294923479717827cffcc37","email":"owner2@demo.com"}

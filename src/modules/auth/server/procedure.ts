@@ -151,6 +151,10 @@ export const authRouter = createTRPCRouter({
                     message: "failed to login",
                 });
             }
+            await generateAuthCookie ({
+                prefix: ctx.db.config.cookiePrefix,
+                value: data.token,
+            });
 
             const createdUser = await ctx.db.find({ collection: 'users', limit: 1, where: { email: { equals: input.email } } });
             const u = createdUser.docs[0];
