@@ -1,0 +1,14 @@
+{"ts":"2025-12-12T01:35:26.495Z","type":"sign-in","userId":"69294920479717827cffcc0d","email":"admin@demo.com"}
+{"ts":"2025-12-12T01:36:45.146Z","type":"sign-out","userId":"69294920479717827cffcc0d"}
+{"ts":"2025-12-12T01:37:18.309Z","type":"sign-out","userId":"692c39744eac11cac3e6a662"}
+{"ts":"2025-12-12T01:37:51.002Z","type":"sign-out","userId":"692c39744eac11cac3e6a662"}
+{"ts":"2025-12-12T01:38:16.391Z","type":"sign-out","userId":"692c39744eac11cac3e6a662"}
+{"ts":"2025-12-12T01:39:40.700Z","type":"sign-up","userId":"693b725ce4f302611fc1e92c","email":"lasttest@gmail.com"}
+{"ts":"2025-12-12T01:40:25.455Z","type":"sign-in","userId":"693b725ce4f302611fc1e92c","email":"lasttest@gmail.com"}
+{"ts":"2025-12-12T01:40:25.659Z","type":"sign-in","userId":"693b725ce4f302611fc1e92c","email":"lasttest@gmail.com"}
+{"ts":"2025-12-12T01:43:21.592Z","type":"checkout","userId":"693b725ce4f302611fc1e92c","tenantSlug":"owner1","productIds":["692949b0479717827cffd5de","692949b0479717827cffd5de","692949b0479717827cffd5de","692949b0479717827cffd5de"],"totalCents":20000}
+{"ts":"2025-12-12T01:45:00.145Z","type":"sign-out","userId":"693b725ce4f302611fc1e92c"}
+{"ts":"2025-12-12T01:45:40.263Z","type":"sign-in","userId":"69294923479717827cffcc37","email":"owner2@demo.com"}
+{"ts":"2025-12-12T01:45:40.292Z","type":"sign-in","userId":"69294923479717827cffcc37","email":"owner2@demo.com"}
+{"ts":"2025-12-12T01:45:40.292Z","type":"sign-in","userId":"69294923479717827cffcc37","email":"owner2@demo.com"}
+{"ts":"2025-12-12T01:45:50.868Z","type":"sign-in","userId":"69294923479717827cffcc37","email":"owner2@demo.com"}
