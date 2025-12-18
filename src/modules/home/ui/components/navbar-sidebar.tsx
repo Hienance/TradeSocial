@@ -93,20 +93,20 @@ export const NavbarSidebar = ({
                         </div>
                     ) : (
                         <div className="border-t">
-                            <Link 
+                            <a 
                                 href="/sign-in"
                                 className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                                 onClick={() => onOpenChange(false)}
                             >
                                 Login
-                            </Link>
-                            <Link 
+                            </a>
+                            <a 
                                 href="/sign-up"
                                 className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                                 onClick={() => onOpenChange(false)}
                             >
                                 Sign up!
-                            </Link>
+                            </a>
                         </div>
                     )}
 

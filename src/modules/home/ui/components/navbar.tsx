@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+// import Link from "next/link";
 import { Poppins } from "next/font/google"
 import { usePathname } from "next/navigation";
 
@@ -38,9 +38,9 @@ const NavbarItem = ({
             className={cn("bg-transparent hover:bg-transparent rounded-full hover:border-primary border-transparent px-3.5 text-lg",
                 isActive && "bg-black text-white hover:bg-black hover:text-white")}
         >
-            <Link href={href}>
+            <a href={href}>
                 {children}
-            </Link>
+            </a>
         </Button>
     );
 };
@@ -69,11 +69,11 @@ export const Navbar = () => {
 
     return (
         <nav className=" h-20 flex border-b justify-between font-medium bg-white">
-            <Link href="/" className="pl-6 flex items-center">
+            <a href="/" className="pl-6 flex items-center">
                 <span className={cn("text-5xl font-semibold", poppins.className)}>
                     TradeSocial
                 </span>
-            </Link>
+            </a>
 
             <NavbarSidebar
                 session={!!session.data?.user}
@@ -98,15 +98,15 @@ export const Navbar = () => {
             <div className="hidden lg:flex">
                     {isSuperAdmin(session.data.user) ? (
                         <Button asChild className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
-                            <Link href="/admin">
+                            <a href="/admin">
                                 Dashboard
-                            </Link>
+                            </a>
                         </Button>
                     ) : (
                         <Button asChild className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
-                            <Link prefetch href={`${generateTenantURL(session.data.user.username)}/profile`}>
+                            <a href={`${generateTenantURL(session.data.user.username)}/profile`}>
                                 Dashboard
-                            </Link>
+                            </a>
                         </Button>
                     )}
                 <Button 
@@ -126,14 +126,14 @@ export const Navbar = () => {
             ) : (
             <div className="hidden lg:flex">
                 <Button asChild variant="secondary" className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-white hover:bg-pink-400 transition-color">
-                    <Link prefetch href="/sign-in">
+                    <a href="/sign-in">
                         Login         
-                    </Link>    
+                    </a>    
                 </Button>
                 <Button asChild className="border-l border-t-0 border-b-0 border-r-0 h-full rounded-none bg-black text-white hover:bg-pink-400 transition-colors hover:text-black text-lg">
-                    <Link prefetch href="/sign-up">
+                    <a href="/sign-up">
                         Sign up!
-                    </Link>
+                    </a>
                 </Button>
             </div>
             )}

@@ -1,8 +1,7 @@
+// import NoPrefetchLink from "@/components/no-prefetch-link";
 import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { StarIcon } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 
 interface ProductCardProp {
@@ -28,16 +27,15 @@ export const ProductCard = ({
     reviewCount,
     price,
 }: ProductCardProp) => {
-    const router = useRouter();
-
     const handleUserClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
-        router.push(generateTenantURL(tenantSlug));
+        // Force a hard navigation to avoid slow client-side transitions
+        window.location.assign(generateTenantURL(tenantSlug));
     }    
 
     return (
-    <Link href={`${generateTenantURL(tenantSlug)}/products/${id}`}>
+    <a href={`${generateTenantURL(tenantSlug)}/products/${id}`}>
         <div className="hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow border rounded-md bg-white overflow-hidden h-full flex flex-col">
             <div className="relative aspect-square">
                 <Image
@@ -70,7 +68,7 @@ export const ProductCard = ({
                 </div>
             </div>
         </div>
-    </Link>
+    </a>
 )};
 
 export const ProductCardSkeleton = () => {

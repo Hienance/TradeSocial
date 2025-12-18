@@ -10,7 +10,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { BookmarkCheckIcon, CheckIcon, LinkIcon, StarIcon } from "lucide-react";
 import { defaultJSXConverters, RichText } from "@payloadcms/richtext-lexical/react";
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { Fragment, useState } from "react";
 import { toast } from "sonner";
 
@@ -65,7 +65,7 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                             </div>
 
                             <div className="px-6 py-4 flex items-center justify-center lg:border-r">
-                                <Link href={generateTenantURL(tenantSlug)} className="flex items-center gap-2">
+                                <a href={generateTenantURL(tenantSlug)} className="flex items-center gap-2">
                                         <Image
                                             src={data.tenant.image?.url || "/Default_pfp.jpg"}
                                             alt={data.tenant.name}
@@ -75,7 +75,7 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                     <p className="text-base underline font-medium">
                                         {data.tenant.name}
                                     </p>
-                                </Link>
+                                </a>
                             </div>
                             <div className="hidden lg:flex px-6 py-4 items-center justify-center">
                                 <div className="flex items-center gap-2"> 
@@ -124,9 +124,9 @@ export const ProductView = ({productId, tenantSlug} : ProductViewProps) => {
                                             className="size-12"
                                             variant="elevated"
                                         >
-                                            <Link prefetch href={`${process.env.NEXT_PUBLIC_APP_URL}/library/${productId}`}>
+                                            <a href={`${process.env.NEXT_PUBLIC_APP_URL}/library/${productId}`}>
                                                 <BookmarkCheckIcon/>
-                                            </Link>
+                                            </a>
                                         </Button>
                                     )}
                                     <Button 

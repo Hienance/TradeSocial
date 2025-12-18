@@ -45,6 +45,10 @@ export const ProductList = () => {
                     reviewRating={product.reviewRating}
                     reviewCount={product.reviewCount}/>
             ))}
+            {isFetchingNextPage &&
+                Array.from({ length: DEFAULT_LIMIT }).map((_, i) => (
+                    <ProductCardSkeleton key={`skeleton-${i}`} />
+                ))}
         </div>
         <div className="flex justify-center pt-8">
             {hasNextPage && (
