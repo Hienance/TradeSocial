@@ -96,9 +96,9 @@ export const Categories = ({data}: Props) => {
                     "h-11 px-4 bg-transparent border-transparent rounded-full hover:bg-white hover:border-primary text-black", 
                     isActiveCategoryHidden && !isAnyHovered && "bg-white border-primary", activeCategory === "all" && "bg-white border-primary",
                 )}>
-                    <Link href="/">
+                    <a href="/">
                     All
-                    </Link>
+                    </a>
                 </Button>
             </div>            
 

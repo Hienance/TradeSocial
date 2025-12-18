@@ -4,7 +4,7 @@ import { generateTenantURL } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { ShoppingCartIcon } from "lucide-react";
@@ -34,7 +34,7 @@ export const Navbar = ({ slug }: Props) => {
     return (
         <nav className="h-20 border-b font-medium bg-white">
             <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 py-6 lg:px-12">
-                <Link href={generateTenantURL(slug)} className="flex items-center gap-2">
+                <a href={generateTenantURL(slug)} className="flex items-center gap-2">
                     <Image
                         src={data.image?.url || "/Default_pfp.jpg"}
                         width={32}
@@ -43,7 +43,7 @@ export const Navbar = ({ slug }: Props) => {
                         alt={slug}
                     />
                 <p className="text-xl">{data.name}</p>
-                </Link>
+                </a>
                 <CheckoutButton tenantSlug={slug}/>
             </div>
         </nav>
